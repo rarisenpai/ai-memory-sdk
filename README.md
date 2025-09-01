@@ -1,5 +1,25 @@
 # learned-context-sdk
-Create a subconsious for your agent that can learn and form memories in the background (using sleeptime compute) that you can plug into your agent's context. Subconsious agents can learn from conversational interactions, files, or any text content you provide.
+Create a subconsious for your agent that can learn and form memories in the background (using sleeptime compute) that you can plug into your agent's context. Subconsious agents can learn from:
+* conversational interactions (`user`/`assistant` messages) 
+* files 
+* text content 
+
+Learned context blocks be appended to your agent's system prompt - a form of "system prompt learning". For example, your agent's context window may look like: 
+```
++========================================+
+|         SYSTEM PROMPT                  |
++========================================+
+|    LEARNED CONTEXT (USER)              | <- Subconscious Agent (learning from message history)
++========================================+
+|    LEARNED CONTEXT (FILES)             | <- Subconscious Agent (learning from files) 
++========================================+
+|           MESSAGES                     |
+|  * User -> Assistant                   |
+|  * User -> Assistant                   |
+|  * User -> Assistant                   |
+|  * ...                                 |
++========================================+
+```
 
 ## Conversational Memory 
 The `ConversationalMemoryClient` provides a simple interface for logging conversation history and retrieving user memory.
