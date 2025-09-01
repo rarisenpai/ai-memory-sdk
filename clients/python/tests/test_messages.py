@@ -1,5 +1,5 @@
 import pytest
-from src.client import SubconsciousAgent, LearnedContextClient, ConversationalMemoryClient
+from learned_context.client import SubconsciousAgent, LearnedContextClient, ConversationalMemoryClient
 import os
 import time
 

@@ -1,16 +1,9 @@
-from re import A
 from letta_client import Letta
 import time
-try:
-    from .database import SubconsciousDatabase, Message, File, MessageCreate, DatabaseStats
-except ImportError:
-    from database import SubconsciousDatabase, Message, File, MessageCreate, DatabaseStats
+from .database import SubconsciousDatabase, Message, File, MessageCreate, DatabaseStats
 from typing import List, Dict, Any
 import json
-try:
-    from .prompt_formatter import format_messages, format_files
-except ImportError:
-    from prompt_formatter import format_messages, format_files
+from .prompt_formatter import format_messages, format_files
 
 class Run: 
     """ Represents a Letta agent run, which is an invocation of an gent. 

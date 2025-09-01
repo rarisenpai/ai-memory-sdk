@@ -1,6 +1,5 @@
-from re import I
 from typing import List, Dict, Any
-from src.database import Message, File
+from .database import Message, File
 
 
 messages_prompt = "The following message interactions have occured"
