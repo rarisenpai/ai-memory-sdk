@@ -1,4 +1,6 @@
+from re import A
 from letta_client import Letta
+import time
 try:
     from .database import SubconsciousDatabase, Message, File, MessageCreate, DatabaseStats
 except ImportError:
@@ -8,15 +10,7 @@ import json
 try:
     from .prompt_formatter import format_messages, format_files
 except ImportError:
-    # Fallback to local implementation if prompt_formatter doesn't exist
-    def format_messages(messages: List[Message]) -> List[Dict[str, str]]:
-        """Format messages for API call"""
-        return [{"role": "user", "content": f"<messages>The following message interactions have occured:\n" + 
-                "\n".join([f"{msg.role}: {msg.content}" for msg in messages]) + "</messages>"}]
-    
-    def format_files(files: List[File]) -> List[Dict[str, str]]:
-        """Format files for API call"""  
-        return []
+    from prompt_formatter import format_messages, format_files
 
 class Run: 
     """ Represents a Letta agent run, which is an invocation of an gent. 
@@ -71,18 +65,38 @@ class SubconsciousAgent:
         
         # Create a run to track the learning process
         if message_to_send:
-            print("SENDING MESSAGES", message_to_send)
             # Format messages properly for the API
-            
-            run = self.letta_client.agents.messages.create_async(
-                agent_id=self.agent_id,
-                messages=message_to_send
-            )
+            index = 0   
+            for messages in message_to_send:
+                print("SENDING MESSAGES", len(str(messages)))
+                letta_run = self.letta_client.agents.messages.create_async(
+                    agent_id=self.agent_id,
+                    messages=[messages]
+                )
+                # wait until run is completed
+                run = Run(run_id=letta_run.id, letta_client=self.letta_client)
+                while run.get_status() != "completed":
+                    time.sleep(1)
+                    print(f"Run {index}/{len(message_to_send)} STATUS", run.get_status())
+                index += 1
         else:
             # No messages to process, create a dummy run
             run = type('Run', (), {'id': 'no-processing-needed'})()
          
         return Run(run_id=run.id, letta_client=self.letta_client)
+
+    def learn_messages(self, messages: List[Dict[str, Any]]) -> Run:
+        """ Learn from a list of messages """ 
+        self.register_messages(messages)
+
+        unprocessed_messages = self.db.get_unprocessed_messages(self.agent_id)
+        formatted_messages = format_messages(unprocessed_messages)
+        print("FORMATTED MESSAGES", formatted_messages)
+        letta_run = self.letta_client.agents.messages.create_async(
+            agent_id=self.agent_id,
+            messages=formatted_messages
+        )
+        return Run(run_id=letta_run.id, letta_client=self.letta_client)
 
     def register_messages(self, messages: List[Dict[str, Any]]) -> int:
         """ Register a list of messages to the subconscious agent """
@@ -141,15 +155,81 @@ class SubconsciousAgent:
 
 class LearnedContextClient:
     def __init__(self, letta_api_key: str):
-        self.letta_client = Letta(token=letta_api_key, project="sarah-wooders-s-project_e3e7845a-d823-4ad9-8b8d-0f4debfe8da7")
+        self.letta_client = Letta(token=letta_api_key)
 
-    def create_subconscious_agent(self):
+    def create_subconscious_agent(self, tags: List[str], name: str = "subconscious_agent"):
         """ Create a subconscious agent that learns over time """
         agent = self.letta_client.agents.create(
-            name="subconscious_agent",
+            name=name,
             model="openai/gpt-4.1",
             agent_type="sleeptime_agent",
-            initial_message_sequence=[]
+            initial_message_sequence=[], 
+            tags=tags
         )
         print("tools", [t.name for t in agent.tools])
+        print("NAME", agent.name)
+        agent =self.letta_client.agents.modify(agent_id=agent.id, tags=tags)
+        print("UPDATE TAGS", agent.tags)
+        #assert self.list_subconscious_agents(tags=tags), f"Agent with tags {tags} not found"
         return SubconsciousAgent(agent_id=agent.id, letta_client=self.letta_client)
+
+    def list_subconscious_agents(self, tags: List[str]):
+        #agents = self.letta_client.agents.list()
+        #for agent in agents:
+        #    print("TAGS MATCH", tags, agent.tags)
+        return self.letta_client.agents.list(name=f"subconscious_agent_user_{tags[0]}")
+        return self.letta_client.agents.list(tags=tags, match_all_tags=False)
+        
+
+class ConversationalMemoryClient: 
+    def __init__(self, letta_api_key: str):
+        self.letta_client = Letta(token=letta_api_key)
+        self.client = LearnedContextClient(letta_api_key)
+
+    def add(self, user_id: str, messages: List[Dict[str, Any]]): 
+        """ Add messages corresponding to a specific user """
+        agent = self.client.list_subconscious_agents(tags=[user_id])
+        if agent:
+            agent = agent[0]
+            print("AGENT EXISTS", agent)
+            return agent.learn_messages(messages)
+        else:
+            print("CREATING AGENT")
+            agent = self.client.create_subconscious_agent(tags=[user_id], name=f"subconscious_agent_user_{user_id}")
+            agent.create_learned_context_block(
+                label="human", 
+                description="Information about the human user you are speaking to", 
+                char_limit=10000, 
+                value="", 
+            )
+            agent.create_learned_context_block(
+                label="summary", 
+                description="A short (1-2 sentences) running summary of the conversation", 
+                char_limit=1000, 
+                value="", 
+            )
+ 
+            print("AGENT CREATED", agent.list_learned_context_blocks())
+
+            print("TAGS", self.letta_client.agents.retrieve(agent_id=agent.agent_id).tags)
+            return agent.learn_messages(messages)
+
+    def get_user_memory(self, user_id: str):
+        """ Get the memory for a specific user """ 
+        agent = self.client.list_subconscious_agents(tags=[user_id])
+        if not agent:
+            print("NO AGENTS WITH TAGS", user_id)
+            return None
+        if agent:
+            agent = agent[0]
+            print("AGENT", agent, agent.id)
+            return SubconsciousAgent(agent_id=agent.id, letta_client=self.letta_client).get_learned_context_block("human")
+        return None
+
+    def delete_user(self, user_id: str):
+        """ Delete a user """ 
+        agent = self.client.list_subconscious_agents(tags=[user_id])
+        if agent:
+            agent = agent[0]
+            self.letta_client.agents.delete(agent.id)
+            print(f"Deleted agent {agent.id} for user {user_id}")

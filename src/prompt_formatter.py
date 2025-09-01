@@ -9,7 +9,7 @@ message_total_char_limit = 5000 # how many character are included in a message c
 
 file_tag = "file"
 file_part_tag = "file_part"
-file_char_limit = 5000 # how many character to include in file part 
+file_char_limit = 20000 # how many character to include in file part 
 
 def format_messages(messages: List[Message]) -> List[str]:
     """
@@ -26,38 +26,41 @@ def format_messages(messages: List[Message]) -> List[str]:
 
     return [{"role": "user", "content": f"<{messages_tag}>{messages_prompt}:\n{message_history}</{messages_tag}>"}]
 
-def format_files(files: List[File]) -> List[str]:
+def format_files(files: List[File]) -> List[Dict[str, str]]:
     """
-    Format files like the following to send in parts: 
-
-    <file_part n/{total_count}><label>label</label><description>description</description><content>content</content></file>
+    Format files into multiple separate messages, ensuring each message stays under file_char_limit.
+    Each file part becomes its own message.
     """
-
-    # chunk up files into parts 
-    file_parts = []
+    all_messages = []
+    
     for file in files:
-        file_content = file.content
+        try:
+            # Read file content from disk
+            with open(file.file_path, 'r', encoding='utf-8') as f:
+                file_content = f.read()
+        except Exception as e:
+            # If we can't read the file, send an error message
+            error_msg = f"<{file_tag} label=\"{file.label}\" description=\"{file.description}\">[Error reading file: {str(e)}]</{file_tag}>"
+            all_messages.append({"role": "user", "content": error_msg})
+            continue
+            
+        # chunk up file content into parts 
         file_content_chunks = [file_content[i:i + file_char_limit] for i in range(0, len(file_content), file_char_limit)]
+        
+        print(f"Formatted file {file.label} into {len(file_content_chunks)} separate messages")
+
+        # Create a separate message for each file part
         for i, chunk in enumerate(file_content_chunks):
-            file_parts.append({
-                "n": i + 1,
-                "total_count": len(file_content_chunks),
-                "label": file.label,
-                "description": file.description,
-                "content": chunk
-            })
-
-    def format_part(part):
-        return f"<{file_part_tag} part={part['n']}/{len(file_parts)}>{part['content']}</{file_part_tag}>"
-
-    # TODO: break this up into more than one time message if the total content is too large
-    file_prompt_start = f"<{file_tag} label={file.label} description={file.description}>"
-    file_prompt_end = f"</{file_tag}>"
-    file_prompt = file_prompt_start + "\n".join(format_part(part) for part in file_parts) + file_prompt_end
-
-    print(file_prompt)
-
-    return [{"role": "user", "content": file_prompt}]
+            part_number = i + 1
+            total_parts = len(file_content_chunks)
+            
+            # Create the message content for this specific part
+            file_part_content = f"<{file_part_tag} part={part_number}/{total_parts}>{chunk}</{file_part_tag}>"
+            file_message = f"<{file_tag} label=\"{file.label}\" description=\"{file.description}\">{file_part_content}</{file_tag}>"
+            
+            all_messages.append({"role": "user", "content": file_message})
+    
+    return all_messages
     
 
     

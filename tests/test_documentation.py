@@ -1,5 +1,6 @@
 import pytest
 import os
+import time
 from src.client import LearnedContextClient
 
 def test_documentation():
