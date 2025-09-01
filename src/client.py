@@ -85,9 +85,12 @@ class SubconsciousAgent:
          
         return Run(run_id=run.id, letta_client=self.letta_client)
 
-    def learn_messages(self, messages: List[Dict[str, Any]]) -> Run:
+    def learn_messages(self, messages: List[Dict[str, Any]], insert_into_archival_memory: bool = False) -> Run:
         """ Learn from a list of messages """ 
         self.register_messages(messages)
+        if insert_into_archival_memory:
+            for message in messages:
+                self.letta_client.agents.passages.create(agent_id=self.agent_id, content=message["content"])
 
         unprocessed_messages = self.db.get_unprocessed_messages(self.agent_id)
         formatted_messages = format_messages(unprocessed_messages)
@@ -182,9 +185,22 @@ class LearnedContextClient:
         
 
 class ConversationalMemoryClient: 
-    def __init__(self, letta_api_key: str):
+    """ A memory class for rememebering information about a user and also retaining a conversational summary """ 
+    def __init__(self, 
+        letta_api_key: str,
+        user_context_block_prompt: str = "Details about the human user you are speaking to.",
+        user_context_block_char_limit: int = 10000,
+        user_context_block_value: str = "",
+        summary_block_prompt: str = "A short (1-2 sentences) running summary of the conversation.",
+        summary_block_char_limit: int = 1000,
+    ):
         self.letta_client = Letta(token=letta_api_key)
         self.client = LearnedContextClient(letta_api_key)
+        self.user_context_block_prompt = user_context_block_prompt
+        self.user_context_block_char_limit = user_context_block_char_limit
+        self.user_context_block_value = user_context_block_value
+        self.summary_block_prompt = summary_block_prompt
+        self.summary_block_char_limit = summary_block_char_limit
 
     def add(self, user_id: str, messages: List[Dict[str, Any]]): 
         """ Add messages corresponding to a specific user """
@@ -198,31 +214,24 @@ class ConversationalMemoryClient:
             agent = self.client.create_subconscious_agent(tags=[user_id], name=f"subconscious_agent_user_{user_id}")
             agent.create_learned_context_block(
                 label="human", 
-                description="Information about the human user you are speaking to", 
-                char_limit=10000, 
-                value="", 
+                description=self.user_context_block_prompt, 
+                char_limit=self.user_context_block_char_limit, 
+                value=self.user_context_block_value, 
             )
             agent.create_learned_context_block(
                 label="summary", 
-                description="A short (1-2 sentences) running summary of the conversation", 
-                char_limit=1000, 
+                description=self.summary_block_prompt, 
+                char_limit=self.summary_block_char_limit, 
                 value="", 
             )
- 
-            print("AGENT CREATED", agent.list_learned_context_blocks())
-
-            print("TAGS", self.letta_client.agents.retrieve(agent_id=agent.agent_id).tags)
-            return agent.learn_messages(messages)
+            # insert into archival memory 
+            return agent.learn_messages(messages, insert_into_archival_memory=False)
 
     def get_user_memory(self, user_id: str):
         """ Get the memory for a specific user """ 
         agent = self.client.list_subconscious_agents(tags=[user_id])
-        if not agent:
-            print("NO AGENTS WITH TAGS", user_id)
-            return None
         if agent:
             agent = agent[0]
-            print("AGENT", agent, agent.id)
             return SubconsciousAgent(agent_id=agent.id, letta_client=self.letta_client).get_learned_context_block("human")
         return None
 
