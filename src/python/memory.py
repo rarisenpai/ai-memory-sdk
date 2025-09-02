@@ -137,7 +137,7 @@ class Memory:
         return None
 
 
-    def get_summary(self, user_id: str):
+    def get_summary(self, user_id: str, prompt_formatted: bool = False):
         """ Get the summary for a specific user """ 
         agent = self._get_matching_agent(tags=[user_id])
         if agent:

@@ -485,7 +485,26 @@ wheels = [
 ]
 
 [[package]]
-name = "learned-context-sdk"
+name = "letta-client"
+version = "0.1.302"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "httpx-sse" },
+    { name = "pydantic", version = "2.10.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "pydantic", version = "2.11.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+    { name = "pydantic-core", version = "2.27.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "pydantic-core", version = "2.33.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+    { name = "typing-extensions", version = "4.13.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "typing-extensions", version = "4.15.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/40/d5/5beeb652ed671aaba2e2951a5c91a865ca5de660924712324ca4a0761513/letta_client-0.1.302.tar.gz", hash = "sha256:d7a687c027c706b0a635c5579e5b320026a0681827718e032df8267cfbf49802", size = 187588, upload-time = "2025-09-01T21:15:57.838Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/38/45/b66aaaadfef98700aef0a0fa6718c2ca8038b18f58061811159e457d7de6/letta_client-0.1.302-py3-none-any.whl", hash = "sha256:6a24e1d35b6c60db536d9f323cbaeb54a73045811dbc9a606c932969092e865f", size = 472752, upload-time = "2025-09-01T21:15:56.013Z" },
+]
+
+[[package]]
+name = "letta-memory"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
@@ -524,25 +543,6 @@ requires-dist = [
     { name = "pytest-asyncio", marker = "extra == 'dev'" },
 ]
 provides-extras = ["dev"]
-
-[[package]]
-name = "letta-client"
-version = "0.1.302"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "httpx" },
-    { name = "httpx-sse" },
-    { name = "pydantic", version = "2.10.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "pydantic", version = "2.11.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-    { name = "pydantic-core", version = "2.27.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "pydantic-core", version = "2.33.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-    { name = "typing-extensions", version = "4.13.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "typing-extensions", version = "4.15.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/40/d5/5beeb652ed671aaba2e2951a5c91a865ca5de660924712324ca4a0761513/letta_client-0.1.302.tar.gz", hash = "sha256:d7a687c027c706b0a635c5579e5b320026a0681827718e032df8267cfbf49802", size = 187588, upload-time = "2025-09-01T21:15:57.838Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/38/45/b66aaaadfef98700aef0a0fa6718c2ca8038b18f58061811159e457d7de6/letta_client-0.1.302-py3-none-any.whl", hash = "sha256:6a24e1d35b6c60db536d9f323cbaeb54a73045811dbc9a606c932969092e865f", size = 472752, upload-time = "2025-09-01T21:15:56.013Z" },
-]
 
 [[package]]
 name = "mypy"
