@@ -1,5 +1,5 @@
 # Memory SDK 
-An experimental SDK for using Letta agents for context management in a pluggable way. "Subconsious" Letta agents learn from data like conversational interactions, files, and other text content to generate *learned context* blocks that you can plug into your agent's system prompt - a form of "system prompt learning". 
+An experimental SDK for using Letta agents for long-term memory and learning in a pluggable way. "Subconsious" Letta agents learn from data like conversational interactions, files, and other text content to generate *learned context* blocks that you can plug into your agent's system prompt - a form of "system prompt learning". 
 ```
 +========================================+
 |         SYSTEM PROMPT                  |
@@ -15,7 +15,10 @@ An experimental SDK for using Letta agents for context management in a pluggable
 |  * ...                                 |
 +========================================+
 ```
-Example: Create a basic OpenAI `gpt-4o-mini` chat agent with memory 
+### Usage: Conversational Memory 
+You can save conversation histories using the Memory SDK, and later retrieve the learned context block to place into your system prompt. This allows your agents to have an evolving understand of the user. 
+
+**Example:** Create a basic OpenAI `gpt-4o-mini` chat agent with memory 
 ```python
 from openai import OpenAI
 from memory import Memory
@@ -59,53 +62,10 @@ def main():
 if __name__ == "__main__":
     main()
 ```
-The `ConversationalMemoryClient` provides a simple interface for logging conversation history and retrieving user memory.
 
-```python
-from learned_context_sdk import ConversationalMemoryClient
-
-client = ConversationalMemoryClient(letta_api_key=os.getenv("LETTA_API_KEY"))
-
-# log conversation history 
-client.add(
-    user_id="user123",
-    messages=[
-        {"role": "user", "content": "Hello, my name is Sarah"},
-        {"role": "assistant", "content": "Hi Sarah! Nice to meet you."}
-    ]
-)
-
-# get user memory 
-memory = client.get_user_memory(user_id="user123")
-print(memory)
-
-# delete user memory 
-client.delete_user(user_id="user123")
-```
-```typescript
-
-import { ConversationalMemoryClient } from 'learned-context-sdk';
-
-const client = new ConversationalMemoryClient(letta_api_key=os.getenv("LETTA_API_KEY"))
-
-client.add(
-    user_id="user123",
-    messages=[
-        {role: "user", content: "Hello, my name is Sarah"},
-        {role: "assistant", content: "Hi Sarah! Nice to meet you."}
-    ]
-)
-
-// get user memory 
-const memory = client.get_user_memory(user_id="user123")
-console.log(memory)
-
-// delete user memory 
-client.delete_user(user_id="user123")
-```
-
-#### Knowledge Base Memory 
-The `KnowledgeBaseMemoryClient` provides a simple interface for creating subconsious agents that can learn from files or other text content. 
-(TODO) 
-
+## Roadmap 
+- [ ] Learning from files
+- [ ] Query historical messages 
+- [ ] Save messages as archival memories
+- [ ] Query archival memory 
 
