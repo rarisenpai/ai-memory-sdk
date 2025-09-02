@@ -5,7 +5,7 @@ from letta_client import Letta
 from prompt_formatter import format_messages
 from schemas import MessageCreate
 
-class MemorySDK: 
+class Memory: 
     """ A memory SDK for Letta """
 
     def __init__(self, 
@@ -68,6 +68,10 @@ class MemorySDK:
         )
         return letta_run.id
 
+    def _format_block(self, block): 
+        """ Format a block for a prompt """ 
+        return f"<{block.label} description=\"{block.description}\">{block.value}</{block.label}>"
+
     def _get_run_status(self, run_id: str):
         """ Get the status of a run """ 
 
@@ -122,18 +126,25 @@ class MemorySDK:
         """ Learn about files """ 
         raise NotImplementedError
 
-    def get_user_memory(self, user_id: str):
+    def get_user_memory(self, user_id: str, prompt_formatted: bool = False):
         """ Get the memory for a specific user """ 
         agent = self._get_matching_agent(tags=[user_id])
         if agent:
-            return self.letta_client.agents.blocks.retrieve(agent.id, "human").value
+            block = self.letta_client.agents.blocks.retrieve(agent.id, "human")
+            if prompt_formatted: 
+                return self._format_block(block)
+            return block.value
         return None
+
 
     def get_summary(self, user_id: str):
         """ Get the summary for a specific user """ 
         agent = self._get_matching_agent(tags=[user_id])
         if agent:
-            return self.letta_client.agents.blocks.retrieve(agent.id, "summary").value
+            block = self.letta_client.agents.blocks.retrieve(agent.id, "summary")
+            if prompt_formatted: 
+                return f"<conversation_summary>{block.value}</conversation_summary>"
+            return block.value
         return None
 
     def delete_user(self, user_id: str):
