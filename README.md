@@ -67,5 +67,6 @@ if __name__ == "__main__":
 - [ ] Learning from files
 - [ ] Query historical messages 
 - [ ] Save messages as archival memories
-- [ ] Query archival memory 
+- [ ] Query archival memory
+- [ ] Add "sleep" (offline collective revisioning of all data)  
 
