@@ -1,5 +1,5 @@
 # Memory SDK 
-An experimental SDK for using Letta agents for context management in a pluggable way. "Subconsious" Letta agents learn from data like conversational interactions, files, and other text content to generate learned context blocks that you can plug into your agent's system prompt - a form of "system prompt learning". 
+An experimental SDK for using Letta agents for context management in a pluggable way. "Subconsious" Letta agents learn from data like conversational interactions, files, and other text content to generate *learned context* blocks that you can plug into your agent's system prompt - a form of "system prompt learning". 
 ```
 +========================================+
 |         SYSTEM PROMPT                  |
@@ -15,8 +15,6 @@ An experimental SDK for using Letta agents for context management in a pluggable
 |  * ...                                 |
 +========================================+
 ```
-You can use the Learned Context SDK directly, or user wrapper classes like the `ConversationalMemoryClient` specifically for conversational memory. 
-
 Example: Create a basic OpenAI `gpt-4o-mini` chat agent with memory 
 ```python
 from openai import OpenAI
