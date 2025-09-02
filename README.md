@@ -1,5 +1,5 @@
-# Letta Memory SDK 
-Create a subconsious for your agent that can learn and form memories in the background (using sleeptime compute) that you can plug into your agent's context. Subconsious agents can learn from conversational interactions (`user`/`assistant` messages), files, and other text content. Learned context blocks be appended to your agent's system prompt - a form of "system prompt learning". 
+# Memory SDK 
+An experimental SDK for using Letta agents for context management in a pluggable way. "Subconsious" Letta agents learn from data like conversational interactions, files, and other text content to generate learned context blocks that you can plug into your agent's system prompt - a form of "system prompt learning". 
 ```
 +========================================+
 |         SYSTEM PROMPT                  |
