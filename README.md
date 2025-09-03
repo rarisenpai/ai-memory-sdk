@@ -1,5 +1,5 @@
 # Memory SDK 
-An experimental SDK for using Letta agents for long-term memory and learning in a pluggable way. When messages are added, subconsious memory agents process them to generate *learned context* that can be plugged into your system prompt, such as a user profile or a conversational summary. 
+An experimental SDK for adding agentic memory and learning in a pluggable way. When messages are added, subconsious memory agents process them to generate *learned context* that can be plugged into your system prompt, such as a user profile or a conversational summary. 
 ```
 +========================================+
 |         SYSTEM PROMPT                  |
@@ -91,9 +91,11 @@ Save messages by adding them to memory:
 ```python
 run = memory.add_messages("user_id", [{"role": "user", "content": "hi"}])
 ```
-This will send the messages to the memory agent for processing. Note that each time you add messages, this will trigger an invocation of the memory agent. To reduce costs, you may want to batch together multiple messages (recommended 5-10). 
+The memory agent will process the messages asynchronously, tracked by the `run`. 
+> [!WARNING]
+> Each each call to `add_messages(...)` will invoke the memory agent. To reduce costs, you may want to send messages in batches (recommended 5-10) or only when messages are evicted from context. 
 
-### Waiting for learning completition
+### Waiting for learning to complete
 Messages are processed asynchronously, so to ensure all memory updates are reflected you should wait for the agent learning to complete.
 ```python
 memory.wait_for_run(run)
