@@ -27,7 +27,7 @@ Interests: Likes cats (2025-09-03)
 You can customize the prompt format by getting the raw summary or user block string with `prompt_formatted=False`.
 
 ## Quickstart 
-1. Create an [Letta API Key](https://app.letta.com/api-keys)
+1. Create a [Letta API key](https://app.letta.com/api-keys)
 2. Run `export LETTA_API_KEY=...`
 3. Install: `pip install letta-memory`
 
