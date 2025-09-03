@@ -1,0 +1,46 @@
+name: Release to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v0.1.0, v1.0.0, etc.
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install build twine
+    
+    - name: Build package
+      run: |
+        cd src/python
+        python -m build
+    
+    - name: Publish to PyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        cd src/python
+        python -m twine upload dist/*
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          src/python/dist/*.whl
+          src/python/dist/*.tar.gz
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

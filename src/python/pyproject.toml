@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "letta-memory"
 version = "0.1.0"
 description = "An experimental SDK for using Letta subagents for pluggable memory management" 
-readme = "README.md"
+readme = "../../README.md"
 requires-python = ">=3.8"
 license = "MIT"
 authors = [
@@ -40,11 +40,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/sarahwooders/learned-context-sdk"
-Repository = "https://github.com/sarahwooders/learned-context-sdk"
+Homepage = "https://github.com/letta-ai/letta-memory"
+Repository = "https://github.com/letta-ai/letta-memory"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/learned_context"]
+packages = ["."]
 
 [tool.black]
 line-length = 100
