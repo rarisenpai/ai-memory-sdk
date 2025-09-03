@@ -26,7 +26,7 @@ Interests: Likes cats (2025-09-03)
 ```
 You can customize the prompt format by getting the raw summary or user block string with `prompt_formatted=False`.
 
-### Quickstart 
+## Quickstart 
 1. Create an [Letta API Key](https://app.letta.com/api-keys)
 2. Run `export LETTA_API_KEY=...`
 3. Install: `pip install letta-memory`
@@ -78,8 +78,46 @@ if __name__ == "__main__":
     main()
 ```
 
+## SDK Reference
+You can initialize the memory SDK with `memory = Memory()`. 
+
+### Adding memories 
+Save messages by adding them to memory: 
+```python
+run = memory.add_messages("user_id", [{"role": "user", "content": "hi"}])
+```
+This will send the messages to the memory agent for processing. Note that each time you add messages, this will trigger an invocation of the memory agent. To reduce costs, you may want to batch together multiple messages (recommended 5-10). 
+
+### Waiting for learning completition
+Messages are processed asynchronously, so to ensure all memory updates are reflected you should wait for the agent learning to complete.
+```python
+memory.wait_for_run(run)
+```
+This will block until the memory agent has completed processing. 
+
+### Retrieving memories for a user
+You can retrieve the summary and/or user memory for a given user with: 
+```python
+summary = memory.get_summary("user_id", prompt_formatted=True)
+user_memory = memory.get_user_memory("user_id", prompt_formatted=True)
+```
+
+### Retrieving the memory agent 
+Memories are formed by Letta agents using the sleeptime architecture. You can get the agent's ID with: 
+```python
+agent_id = memory.get_memory_agent_id("user_id")
+```
+The agent can be viewed at `https://app.letta.com/agents/<AGENT_ID>`. 
+
+### Deleting user memories 
+All memories and data associated with a user can be deleted with: 
+```python
+memory.delete_user("user_id")
+```
+
 
 ## Roadmap 
+- [ ] TypeScript support 
 - [ ] Learning from files
 - [ ] Query historical messages 
 - [ ] Save messages as archival memories
