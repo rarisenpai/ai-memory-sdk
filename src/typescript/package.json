@@ -1,0 +1,41 @@
+{
+  "name": "letta-memory-ts",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for using Letta subagents for pluggable memory management",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "npm run build && node dist/tests/memory.test.js && node dist/tests/prompt-formatter.test.js",
+    "test:memory": "npm run build && node dist/tests/memory.test.js",
+    "test:formatter": "npm run build && node dist/tests/prompt-formatter.test.js",
+    "test:jest": "jest",
+    "test:watch": "jest --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "letta",
+    "memory",
+    "ai",
+    "chatbot",
+    "typescript"
+  ],
+  "author": "Sarah Wooders <sarah@example.com>",
+  "license": "MIT",
+  "dependencies": {
+    "letta": "^0.6.4",
+    "openai": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sarahwooders/learned-context-sdk"
+  }
+}

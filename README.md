@@ -1,5 +1,5 @@
 # Memory SDK 
-An experimental SDK for using Letta agents for context management in a pluggable way. "Subconsious" Letta agents learn from data like conversational interactions, files, and other text content to generate learned context blocks that you can plug into your agent's system prompt - a form of "system prompt learning". 
+An experimental SDK for using Letta agents for long-term memory and learning in a pluggable way. "Subconsious" Letta agents learn from data like conversational interactions, files, and other text content to generate *learned context* blocks that you can plug into your agent's system prompt - a form of "system prompt learning". 
 ```
 +========================================+
 |         SYSTEM PROMPT                  |
@@ -15,57 +15,70 @@ An experimental SDK for using Letta agents for context management in a pluggable
 |  * ...                                 |
 +========================================+
 ```
-You can use the Learned Context SDK directly, or user wrapper classes like the `ConversationalMemoryClient` specifically for conversational memory. 
 
-### Clients 
-### Conversational Memory 
-The `ConversationalMemoryClient` provides a simple interface for logging conversation history and retrieving user memory.
-
+### Usage: Conversational Memory 
+You can save conversation histories using the Memory SDK, and later retrieve the learned context block to place into your system prompt. This allows your agents to have an evolving understand of the user. 
+**Example:** Create a basic OpenAI `gpt-4o-mini` chat agent with memory 
 ```python
-from learned_context_sdk import ConversationalMemoryClient
+from openai import OpenAI
+from memory import Memory
 
-client = ConversationalMemoryClient(letta_api_key=os.getenv("LETTA_API_KEY"))
+openai_client = OpenAI()
+memory = Memory()
 
-# log conversation history 
-client.add(
-    user_id="user123",
-    messages=[
-        {"role": "user", "content": "Hello, my name is Sarah"},
-        {"role": "assistant", "content": "Hi Sarah! Nice to meet you."}
-    ]
-)
+def chat_with_memories(message: str, user_id: str = "default_user") -> str:
 
-# get user memory 
-memory = client.get_user_memory(user_id="user123")
-print(memory)
+    # get the user memory 
+    user_memory = memory.get_user_memory(user_id)
+    if not user_memory:
+        memory.initialize_user_memory(user_id, reset=True)
+        user_memory = memory.get_user_memory(user_id)
+    
+    # format the user memory 
+    user_memory_prompt= memory.get_user_memory(user_id, prompt_formatted=True)
 
-# delete user memory 
-client.delete_user(user_id="user123")
+    # generate the assistant response
+    system_prompt = f"<system>You are a helpful AI assistant</system>"
+    system_prompt += f"\n{user_memory_prompt}"
+    messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": message}]
+    response = openai_client.chat.completions.create(model="gpt-4o-mini", messages=messages)
+    assistant_response = response.choices[0].message.content
+
+    # Create new memories from the conversation
+    messages.append({"role": "assistant", "content": assistant_response})
+    memory.add_messages(user_id, messages)
+
+    return assistant_response
+
+def main():
+    print("Chat with AI (type 'exit' to quit)")
+    while True:
+        user_input = input("You: ").strip()
+        if user_input.lower() == 'exit':
+            print("Goodbye!")
+            break
+        print(f"AI: {chat_with_memories(user_input)}")
+
+if __name__ == "__main__":
+    main()
 ```
-```typescript
-
-import { ConversationalMemoryClient } from 'learned-context-sdk';
-
-const client = new ConversationalMemoryClient(letta_api_key=os.getenv("LETTA_API_KEY"))
-
-client.add(
-    user_id="user123",
-    messages=[
-        {role: "user", content: "Hello, my name is Sarah"},
-        {role: "assistant", content: "Hi Sarah! Nice to meet you."}
-    ]
-)
-
-// get user memory 
-const memory = client.get_user_memory(user_id="user123")
-console.log(memory)
-
-// delete user memory 
-client.delete_user(user_id="user123")
+The memory will have a summary and user memory block that you can place into your system prompt. 
 ```
+<conversation_summary>
+Sarah introduced herself and asked the assistant to tell about itself. The assistant provided a brief self-description and offered further help.
+</conversation_summary>
 
-#### Knowledge Base Memory 
-The `KnowledgeBaseMemoryClient` provides a simple interface for creating subconsious agents that can learn from files or other text content. 
-(TODO) 
+<human description="Details about the human user you are speaking to.">
+Name: Sarah
+Interests: Likes cats (2025-09-03)
+</human>
+```
+You can customize the prompt format by getting the raw summary or user block string with `prompt_formatted=False`.
 
+## Roadmap 
+- [ ] Learning from files
+- [ ] Query historical messages 
+- [ ] Save messages as archival memories
+- [ ] Query archival memory
+- [ ] Add "sleep" (offline collective revisioning of all data)  
 

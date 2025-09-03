@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-from .database import Message, File
+from schemas import Message, File
 
 
 messages_prompt = "The following message interactions have occured"

@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "learned-context-sdk"
+name = "letta-memory"
 version = "0.1.0"
-description = "A wrapper around the Letta client that provides learned context capabilities"
+description = "An experimental SDK for using Letta subagents for pluggable memory management" 
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
@@ -25,7 +25,9 @@ classifiers = [
 
 dependencies = [
     "letta-client",
+    "openai>=1.102.0",
     "pydantic>=2.0.0",
+    "pytest>=8.3.5",
 ]
 
 [project.optional-dependencies]
