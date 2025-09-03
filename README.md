@@ -36,7 +36,7 @@ You can save conversation histories using the Memory SDK, and later retrieve the
 **Example:** Create a basic OpenAI `gpt-4o-mini` chat agent with memory 
 ```python
 from openai import OpenAI
-from memory import Memory
+from letta_memory import Memory
 
 openai_client = OpenAI()
 memory = Memory()
@@ -79,7 +79,12 @@ if __name__ == "__main__":
 ```
 
 ## SDK Reference
-You can initialize the memory SDK with `memory = Memory()`. 
+You can initialize the memory SDK with:
+```python
+from letta_memory import Memory
+
+memory = Memory()
+```
 
 ### Adding memories 
 Save messages by adding them to memory: 
