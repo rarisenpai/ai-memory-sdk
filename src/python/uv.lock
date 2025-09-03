@@ -505,7 +505,7 @@ wheels = [
 
 [[package]]
 name = "letta-memory"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "letta-client" },

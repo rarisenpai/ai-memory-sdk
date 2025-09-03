@@ -46,8 +46,6 @@ def format_files(files: List[File]) -> List[Dict[str, str]]:
         # chunk up file content into parts 
         file_content_chunks = [file_content[i:i + file_char_limit] for i in range(0, len(file_content), file_char_limit)]
         
-        print(f"Formatted file {file.label} into {len(file_content_chunks)} separate messages")
-
         # Create a separate message for each file part
         for i, chunk in enumerate(file_content_chunks):
             part_number = i + 1
