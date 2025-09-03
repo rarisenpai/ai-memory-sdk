@@ -15,9 +15,9 @@ An experimental SDK for using Letta agents for long-term memory and learning in 
 |  * ...                                 |
 +========================================+
 ```
+
 ### Usage: Conversational Memory 
 You can save conversation histories using the Memory SDK, and later retrieve the learned context block to place into your system prompt. This allows your agents to have an evolving understand of the user. 
-
 **Example:** Create a basic OpenAI `gpt-4o-mini` chat agent with memory 
 ```python
 from openai import OpenAI
