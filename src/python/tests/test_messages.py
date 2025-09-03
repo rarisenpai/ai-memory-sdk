@@ -1,5 +1,5 @@
 import pytest
-from memory import Memory 
+from letta_memory import Memory 
 import os
 import time
 

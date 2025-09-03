@@ -1,6 +1,6 @@
 from re import I
 from openai import OpenAI
-from memory import Memory
+from letta_memory import Memory
 
 openai_client = OpenAI()
 memory = Memory()
