@@ -147,6 +147,13 @@ class Memory:
             return block.value
         return None
 
+    def get_memory_agent_id(self, user_id: str):
+        """ Get the agent ID for a specific user """ 
+        agent = self._get_matching_agent(tags=[user_id])
+        if agent:
+            return agent.id
+        return None
+
     def delete_user(self, user_id: str):
         """ Delete a user """ 
         agent = self._get_matching_agent(tags=[user_id])
