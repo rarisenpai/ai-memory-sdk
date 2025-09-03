@@ -1,12 +1,10 @@
 # Memory SDK 
-An experimental SDK for using Letta agents for long-term memory and learning in a pluggable way. "Subconsious" Letta agents learn from data like conversational interactions, files, and other text content to generate *learned context* blocks that you can plug into your agent's system prompt - a form of "system prompt learning". 
+An experimental SDK for using Letta agents for long-term memory and learning in a pluggable way. When messages are added, subconsious memory agents process them to generate *learned context* that can be plugged into your system prompt, such as a user profile or a conversational summary. 
 ```
 +========================================+
 |         SYSTEM PROMPT                  |
 +========================================+
-|    LEARNED CONTEXT (USER)              | <- Subconscious Agent (learning from message history)
-+========================================+
-|    LEARNED CONTEXT (FILES)             | <- Subconscious Agent (learning from files) 
+|      LEARNED CONTEXT (HUMAN)           | <- memory agent (learning from message history)
 +========================================+
 |           MESSAGES                     |
 |  * User -> Assistant                   |
@@ -15,10 +13,23 @@ An experimental SDK for using Letta agents for long-term memory and learning in 
 |  * ...                                 |
 +========================================+
 ```
+For a specific user, the memory agent will learn a `summary` block and a `human` block, formatted as follows:
+```html
+<conversation_summary>
+Sarah introduced herself and asked the assistant to tell about itself. The assistant provided a brief self-description and offered further help.
+</conversation_summary>
+
+<human description="Details about the human user you are speaking to.">
+Name: Sarah
+Interests: Likes cats (2025-09-03)
+</human>
+```
+You can customize the prompt format by getting the raw summary or user block string with `prompt_formatted=False`.
 
 ### Quickstart 
-1. Create an [API Key](https://app.letta.com/api-keys)
-2. Install: `pip install letta-memory`
+1. Create an [Letta API Key](https://app.letta.com/api-keys)
+2. Run `export LETTA_API_KEY=...`
+3. Install: `pip install letta-memory`
 
 ### Usage: Conversational Memory 
 You can save conversation histories using the Memory SDK, and later retrieve the learned context block to place into your system prompt. This allows your agents to have an evolving understand of the user. 
@@ -66,18 +77,7 @@ def main():
 if __name__ == "__main__":
     main()
 ```
-The memory will have a summary and user memory block that you can place into your system prompt. 
-```
-<conversation_summary>
-Sarah introduced herself and asked the assistant to tell about itself. The assistant provided a brief self-description and offered further help.
-</conversation_summary>
 
-<human description="Details about the human user you are speaking to.">
-Name: Sarah
-Interests: Likes cats (2025-09-03)
-</human>
-```
-You can customize the prompt format by getting the raw summary or user block string with `prompt_formatted=False`.
 
 ## Roadmap 
 - [ ] Learning from files
