@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'  # Trigger on version tags like v0.1.0, v1.0.0, etc.
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
   release:
@@ -20,6 +21,10 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@v3
     
+    - name: Copy README to python package directory
+      run: |
+        cp README.md src/python/
+    
     - name: Build package
       run: |
         cd src/python
@@ -31,7 +36,7 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: |
         cd src/python
-        python -m twine upload dist/*
+        uv tool run twine upload dist/*
     
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
