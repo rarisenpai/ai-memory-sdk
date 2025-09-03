@@ -62,6 +62,18 @@ def main():
 if __name__ == "__main__":
     main()
 ```
+The memory will have a summary and user memory block that you can place into your system prompt. 
+```
+<conversation_summary>
+Sarah introduced herself and asked the assistant to tell about itself. The assistant provided a brief self-description and offered further help.
+</conversation_summary>
+
+<human description="Details about the human user you are speaking to.">
+Name: Sarah
+Interests: Likes cats (2025-09-03)
+</human>
+```
+You can customize the prompt format by getting the raw summary or user block string with `prompt_formatted=False`.
 
 ## Roadmap 
 - [ ] Learning from files
