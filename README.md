@@ -138,11 +138,18 @@ memory.wait_for_run(run)
 ```
 This will block until the memory agent has completed processing. 
 
-### Retrieving memories for a user
-You can retrieve the summary and/or user memory for a given user with: 
+### Getting memories for a user
+You can get the context blocks for the summary and/or user memory with: 
 ```python
 summary = memory.get_summary("user_id", prompt_formatted=True)
 user_memory = memory.get_user_memory("user_id", prompt_formatted=True)
+```
+To get the raw value of the context block, you can pass `prompt_formatted=False`. 
+
+### Searching messages 
+You can search messages with semantic search with: 
+```python
+messages = memory.query("user_id", query="Favorite foods")
 ```
 
 ### Retrieving the memory agent 
