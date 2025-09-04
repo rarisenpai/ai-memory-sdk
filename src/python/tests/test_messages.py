@@ -25,7 +25,7 @@ def test_conversational_memory():
             "role": "user",
             "content": "I love cats"
         }
-    ])
+    ], skip_vector_storage=False)
 
     # wait for the run to complete
     client.wait_for_run(run)
@@ -37,9 +37,9 @@ def test_conversational_memory():
 
     # search 
     search_results = client.search(test_user_id, "animals")
-    assert len(search_results.results) > 0, f"Expected search results, got {search_results.results}"
-    print("SEARCH RESULTS", search_results.results)
-    assert "cats" in search_results.results[0].content, f"Expected 'cats' in search results, got {search_results.results[0].content}"
+    assert len(search_results) > 0, f"Expected search results, got {search_results}"
+    print("SEARCH RESULTS", search_results)
+    assert "cats" in search_results[0], f"Expected 'cats' in search results, got {search_results[0]}"
     print(search_results)
 
 

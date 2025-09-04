@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "letta-memory"
-version = "0.1.5"
+version = "0.1.6"
 description = "An experimental SDK for using Letta subagents for pluggable memory management" 
 readme = "README.md"
 requires-python = ">=3.8"

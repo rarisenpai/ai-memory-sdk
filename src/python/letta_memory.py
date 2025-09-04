@@ -63,7 +63,7 @@ class Memory:
         self, 
         agent_id: str, 
         messages: List[Dict[str, Any]], 
-        skip_vector_storage: bool = False,
+        skip_vector_storage: bool,
     ):
         """ Learn messages asynchronously """ 
         formatted_messages = format_messages([MessageCreate(**msg) for msg in messages])
@@ -74,11 +74,11 @@ class Memory:
 
         # insert into archival in parallel
         if not skip_vector_storage:
-            archival_memories = list(set([message["content"] for message in messages]))
-            for message in archival_memories:
+            for message in messages:
                 self.letta_client.agents.passages.create(
                     agent_id=agent_id,
-                    text=message
+                    text=message["content"],
+                    tags=[message["role"]],
                 )
 
         return letta_run.id
@@ -127,7 +127,7 @@ class Memory:
         self._create_context_block(agent_id=agent_id, label="summary", description=summary_block_prompt, char_limit=summary_block_char_limit, value="")
         return agent_id
             
-    def add_messages(self, user_id: str, messages: List[Dict[str, Any]]): 
+    def add_messages(self, user_id: str, messages: List[Dict[str, Any]], skip_vector_storage: bool = True): 
         """ Add messages corresponding to a specific user """
         agent = self._get_matching_agent(tags=[user_id])
         if agent:
@@ -135,7 +135,7 @@ class Memory:
         else:
             agent_id = self.initialize_user_memory(user_id)
 
-        return self._learn_messages(agent_id, messages)
+        return self._learn_messages(agent_id, messages, skip_vector_storage=skip_vector_storage)
 
     def add_files(self, files: List[Dict[str, Any]]):
         """ Learn about files """ 
@@ -178,7 +178,8 @@ class Memory:
             print(f"Deleted agent {agent.id} for user {user_id}")
 
     def search(self, user_id: str, query: str):
-        """ Search for memories """ 
+        """ Search for stored user messages """ 
         agent = self._get_matching_agent(tags=[user_id])
         if agent:
-            return self.letta_client.agents.passages.search(agent_id=agent.id, query=query)
+            response = self.letta_client.agents.passages.search(agent_id=agent.id, query=query, tags=["user"])
+            return [result.content for result in response.results]
