@@ -166,11 +166,11 @@ memory.delete_user("user_id")
 ```
 
 
-## Roadmap 
+## Roadmap
+- [x] Save messages as archival memories
+- [x] Query messages
+- [ ] Query messages by time
 - [ ] TypeScript support 
 - [ ] Learning from files
-- [ ] Query historical messages 
-- [ ] Save messages as archival memories
-- [ ] Query archival memory
 - [ ] Add "sleep" (offline collective revisioning of all data)  
 
