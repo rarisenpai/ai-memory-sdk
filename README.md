@@ -1,4 +1,4 @@
-# Memory SDK 
+# AI Memory SDK 
 An experimental SDK for adding agentic memory and learning in a pluggable way. When messages are added, subconsious memory agents process them to generate *learned context* that can be plugged into your system prompt, such as a user profile or a conversational summary. 
 ```
 +========================================+
@@ -29,14 +29,14 @@ You can customize the prompt format by getting the raw summary or user block str
 ## Quickstart 
 1. Create a [Letta API key](https://app.letta.com/api-keys)
 2. Run `export LETTA_API_KEY=...`
-3. Install: `pip install letta-memory`
+3. Install: `pip install ai-memory-sdk`
 
 ### Usage: Conversational Memory 
 You can save conversation histories using the Memory SDK, and later retrieve the learned context block to place into your system prompt. This allows your agents to have an evolving understand of the user. 
 **Example:** Create a basic OpenAI `gpt-4o-mini` chat agent with memory 
 ```python
 from openai import OpenAI
-from letta_memory import Memory
+from ai_memory_sdk import Memory
 
 openai_client = OpenAI()
 memory = Memory()
@@ -77,11 +77,12 @@ def main():
 if __name__ == "__main__":
     main()
 ```
+You can also search memories (semantic search) with `memory.search(user_id, query)` to retrieve relevant historical messages.
 
 ## SDK Reference
 You can initialize the memory SDK with:
 ```python
-from letta_memory import Memory
+from ai_memory_sdk import Memory
 
 memory = Memory()
 ```
