@@ -32,33 +32,69 @@ Memories can also be explicitly searched with semantic search to retrieve releva
 
 ### Usage: Conversational Memory 
 You can save conversation histories using the Memory SDK, and later retrieve the learned context block to place into your system prompt. This allows your agents to have an evolving understand of the user. 
+
 **Example:** Create a basic OpenAI `gpt-4o-mini` chat agent with memory 
+
 ```python
 from openai import OpenAI
 from ai_memory_sdk import Memory
 
-openai_client = OpenAI()
-memory = Memory(api_key="LETTA_API_KEY")
+# Memory is a lightweight client around Letta, and will handle storing information
+# about user conversations.
+#
+# Assumes the existence of the LETTA_API_KEY environment variable, but you can
+# set this manually with Memory(api_key="your_api_key")
+memory = Memory()
+
+# Set up your OpenAI client like you normally would.
+# This example assumes that the OpenAI key is stored in the OPENAI_API_KEY
+# environment variable.
+openai_client = OpenAI(api_key="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")
 
 def chat_with_memories(message: str, user_id: str = "default_user") -> str:
-
-    # get the user memory 
+    # Retrieve the user memory block if it exists, otherwise initialize it
+    # User memory blocks are pieces of information about whoever is talking
+    # to your assistant, and can be created/retrieved using arbitrary string
+    # keys.
     user_memory = memory.get_user_memory(user_id)
     if not user_memory:
+        # User doesn't exist, create a new memory block
         memory.initialize_user_memory(user_id, reset=True)
         user_memory = memory.get_user_memory(user_id)
-    
-    # format the user memory 
-    user_memory_prompt= memory.get_user_memory(user_id, prompt_formatted=True)
 
-    # generate the assistant response
+
+    # memory.get_user_memory(user_id, prompt_formatted=True) returns
+    # the contents of the user block formatted as a prompt:
+    #
+    # <human description="Details about the human user you are speaking to.">
+    # Name: Sarah
+    # Interests: Likes cats (2025-09-04)
+    # </human>
+    user_memory_prompt= memory.get_user_memory(user_id, prompt_formatted=True)
+    print(user_memory_prompt)
+
+    # Generate the assistant response using the inference engine of your choice,
+    # OpenAI in this case.
     system_prompt = f"<system>You are a helpful AI assistant</system>"
     system_prompt += f"\n{user_memory_prompt}"
-    messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": message}]
-    response = openai_client.chat.completions.create(model="gpt-4o-mini", messages=messages)
+
+    # Create the list of message
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": message}
+    ]
+
+    # Send the messages to the OpenAI API
+    response = openai_client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages
+    )
+
+    # Extract the assistant's message from the API response
     assistant_response = response.choices[0].message.content
 
-    # Create new memories from the conversation
+    # Create new memories from the conversation -- this will update the user's memory block
+    print("Creating new memories...")
     messages.append({"role": "assistant", "content": assistant_response})
     memory.add_messages(user_id, messages)
 
@@ -75,6 +111,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 ```
 You can also search memories (semantic search) with `memory.search(user_id, query)` to retrieve relevant historical messages.
 
