@@ -28,8 +28,7 @@ Memories can also be explicitly searched with semantic search to retrieve releva
 
 ## Quickstart 
 1. Create a [Letta API key](https://app.letta.com/api-keys)
-2. Run `export LETTA_API_KEY=...`
-3. Install: `pip install ai-memory-sdk`
+2. Install: `pip install ai-memory-sdk`
 
 ### Usage: Conversational Memory 
 You can save conversation histories using the Memory SDK, and later retrieve the learned context block to place into your system prompt. This allows your agents to have an evolving understand of the user. 
@@ -39,7 +38,7 @@ from openai import OpenAI
 from ai_memory_sdk import Memory
 
 openai_client = OpenAI()
-memory = Memory()
+memory = Memory(api_key="LETTA_API_KEY")
 
 def chat_with_memories(message: str, user_id: str = "default_user") -> str:
 
@@ -84,7 +83,7 @@ You can initialize the memory SDK with:
 ```python
 from ai_memory_sdk import Memory
 
-memory = Memory()
+memory = Memory(api_key="LETTA_API_KEY")
 ```
 
 ### Adding memories 
