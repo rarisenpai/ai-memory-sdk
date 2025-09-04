@@ -1,5 +1,5 @@
 import pytest
-from letta_memory import Memory 
+from ai_memory_sdk import Memory 
 import os
 import time
 

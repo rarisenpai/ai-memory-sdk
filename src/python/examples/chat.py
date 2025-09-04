@@ -1,5 +1,5 @@
 from openai import OpenAI
-from letta_memory import Memory
+from ai_memory_sdk import Memory
 
 openai_client = OpenAI()
 memory = Memory()
