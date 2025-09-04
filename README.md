@@ -49,21 +49,19 @@ memory = Memory()
 # Set up your OpenAI client like you normally would.
 # This example assumes that the OpenAI key is stored in the OPENAI_API_KEY
 # environment variable.
-openai_client = OpenAI(api_key="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")
+openai_client = OpenAI()
 
 def chat_with_memories(message: str, user_id: str = "default_user") -> str:
     # Retrieve the user memory block if it exists, otherwise initialize it
     # User memory blocks are pieces of information about whoever is talking
     # to your assistant, and can be created/retrieved using arbitrary string
-    # keys.
+    # identifier keys.
     user_memory = memory.get_user_memory(user_id)
     if not user_memory:
         # User doesn't exist, create a new memory block
         memory.initialize_user_memory(user_id, reset=True)
         user_memory = memory.get_user_memory(user_id)
 
-
-    # memory.get_user_memory(user_id, prompt_formatted=True) returns
     # the contents of the user block formatted as a prompt:
     #
     # <human description="Details about the human user you are speaking to.">
@@ -93,7 +91,8 @@ def chat_with_memories(message: str, user_id: str = "default_user") -> str:
     # Extract the assistant's message from the API response
     assistant_response = response.choices[0].message.content
 
-    # Create new memories from the conversation -- this will update the user's memory block
+    # Create new memories from the conversation --
+    # this will update the user's memory block and persist messages
     print("Creating new memories...")
     messages.append({"role": "assistant", "content": assistant_response})
     memory.add_messages(user_id, messages)
