@@ -24,7 +24,7 @@ Name: Sarah
 Interests: Likes cats (2025-09-03)
 </human>
 ```
-You can customize the prompt format by getting the raw summary or user block string with `prompt_formatted=False`.
+Memories can also be explicitly searched with semantic search to retrieve relevant historical messages to place back into context. 
 
 ## Quickstart 
 1. Create a [Letta API key](https://app.letta.com/api-keys)
