@@ -6,7 +6,7 @@ import time
 def test_conversational_memory():
     """ Test the conversational memory client """
     client = Memory(api_key=os.getenv("LETTA_API_KEY"))
-    test_user_id = "test_user_id_123"
+    test_user_id = "test_user_id_1234"
 
     # initialize the userA
     client.initialize_user_memory(test_user_id, reset=True)
