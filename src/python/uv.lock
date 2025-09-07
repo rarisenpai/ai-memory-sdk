@@ -9,7 +9,7 @@ resolution-markers = [
 
 [[package]]
 name = "ai-memory-sdk"
-version = "0.1.8"
+version = "0.1.9"
 source = { editable = "." }
 dependencies = [
     { name = "letta-client" },
