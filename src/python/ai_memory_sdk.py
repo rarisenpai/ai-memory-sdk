@@ -59,7 +59,7 @@ class Memory:
         """ Delete an agent """ 
         self.letta_client.agents.delete(agent_id=agent_id)
 
-    def _learn_messages(
+    async def _learn_messages(
         self, 
         agent_id: str, 
         messages: List[Dict[str, Any]], 
@@ -74,12 +74,15 @@ class Memory:
 
         # insert into archival in parallel
         if not skip_vector_storage:
-            for message in messages:
-                self.letta_client.agents.passages.create(
+            tasks = [
+                self.async_letta_client.agents.passages.create(
                     agent_id=agent_id,
                     text=message["content"],
                     tags=[message["role"]],
                 )
+                for message in messages
+            ]
+            await asyncio.gather(*tasks)
 
         return letta_run.id
 
@@ -125,6 +128,12 @@ class Memory:
         # create context blocks
         self._create_context_block(agent_id=agent_id, label="human", description=user_context_block_prompt, char_limit=user_context_block_char_limit, value=user_context_block_value)
         self._create_context_block(agent_id=agent_id, label="summary", description=summary_block_prompt, char_limit=summary_block_char_limit, value="")
+
+        # attach a single archival memory (workaround)
+        self.letta_client.agents.passages.create(
+            agent_id=agent_id,
+            text=f"Initialized memory for user {user_id}",
+        )
         return agent_id
             
     def add_messages(self, user_id: str, messages: List[Dict[str, Any]], skip_vector_storage: bool = True): 
@@ -135,7 +144,7 @@ class Memory:
         else:
             agent_id = self.initialize_user_memory(user_id)
 
-        return self._learn_messages(agent_id, messages, skip_vector_storage=skip_vector_storage)
+        return asyncio.run(self._learn_messages(agent_id, messages, skip_vector_storage=skip_vector_storage))
 
     def add_files(self, files: List[Dict[str, Any]]):
         """ Learn about files """ 
