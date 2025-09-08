@@ -3,16 +3,24 @@ from ai_memory_sdk import Memory
 import os
 import time
 
-def test_conversational_memory():
-    """ Test the conversational memory client """
-    client = Memory(api_key=os.getenv("LETTA_API_KEY"))
-    test_user_id = "test_user_id_1234"
+@pytest.fixture(scope="module")
+def client():
+    return Memory(api_key=os.getenv("LETTA_API_KEY"))
 
-    # initialize the userA
-    client.initialize_user_memory(test_user_id, reset=True)
+# create fixture for user 
+@pytest.fixture(scope="module")
+def user_id(client):
+    user_id = "test_user_id_123"
+    client.initialize_user_memory(user_id, reset=True)
+    yield user_id
+    client.delete_user(user_id)
+
+
+def test_conversational_memory(user_id, client):
+    """ Test the conversational memory client """
 
     # add messages 
-    run =  client.add_messages(test_user_id, messages=[
+    run =  client.add_messages(user_id, messages=[
         {
             "role": "user",
             "content": "Hi my name is Bob"
@@ -31,12 +39,12 @@ def test_conversational_memory():
     client.wait_for_run(run)
 
     # get the memory 
-    memory = client.get_user_memory(test_user_id)
+    memory = client.get_user_memory(user_id)
     assert "Bob" in memory, f"Expected 'Bob' in memory value, got {memory}"
     print(memory)
 
     # search 
-    search_results = client.search(test_user_id, "animals")
+    search_results = client.search(user_id, "animals")
     assert len(search_results) > 0, f"Expected search results, got {search_results}"
     print("SEARCH RESULTS", search_results)
     assert "cats" in search_results[0], f"Expected 'cats' in search results, got {search_results[0]}"
