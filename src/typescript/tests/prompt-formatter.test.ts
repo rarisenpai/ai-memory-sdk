@@ -310,7 +310,7 @@ function runAllTests() {
 
     console.log('✅ All Prompt Formatter tests passed!');
   } catch (error) {
-    console.error('❌ Test failed:', error.message);
+    console.error('❌ Test failed:', error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
 }
