@@ -1,5 +1,5 @@
 {
-  "name": "letta-memory-ts",
+  "name": "@letta-ai/memory-sdk",
   "version": "0.1.0",
   "description": "TypeScript SDK for using Letta subagents for pluggable memory management",
   "main": "dist/index.js",
@@ -7,10 +7,12 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "npm run build && node dist/tests/memory.test.js && node dist/tests/prompt-formatter.test.js",
+    "test": "npm run build && node dist/tests/memory.test.js && node dist/tests/prompt-formatter.test.js && npm run test:messages",
     "test:memory": "npm run build && node dist/tests/memory.test.js",
     "test:formatter": "npm run build && node dist/tests/prompt-formatter.test.js",
     "test:jest": "jest",
+    "test:all": "npm run test:memory && npm run test:formatter && npm run test:messages",
+    "test:messages": "jest tests/test_messages.test.ts",
     "test:watch": "jest --watch",
     "clean": "rm -rf dist"
   },
@@ -24,7 +26,8 @@
   "author": "Sarah Wooders <sarah@example.com>",
   "license": "MIT",
   "dependencies": {
-    "letta": "^0.6.4",
+    "@letta-ai/letta-client": "^0.1.211",
+    "letta": "^0.5.2",
     "openai": "^4.0.0"
   },
   "devDependencies": {

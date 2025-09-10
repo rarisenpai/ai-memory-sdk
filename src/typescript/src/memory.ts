@@ -1,4 +1,4 @@
-import { Letta } from 'letta';
+import { LettaClient } from '@letta-ai/letta-client';
 import { formatMessages } from './prompt-formatter';
 import { MessageCreate } from './schemas';
 
@@ -7,11 +7,11 @@ export interface MemoryConfig {
 }
 
 export class Memory {
-  private lettaClient: Letta;
+  private lettaClient: LettaClient;
 
   constructor(config: MemoryConfig = {}) {
     const apiKey = config.lettaApiKey || process.env.LETTA_API_KEY;
-    this.lettaClient = new Letta({ token: apiKey });
+    this.lettaClient = new LettaClient({ token: apiKey });
   }
 
   private async createSleeptimeAgent(name: string, tags: string[]): Promise<string> {
@@ -47,21 +47,18 @@ export class Memory {
       value,
     });
     
-    // Attach block to agent (assuming this method exists)
-    await this.lettaClient.agents.blocks.attach({
-      agentId,
-      blockId: block.id,
-    });
+    // Attach block to agent
+    await this.lettaClient.agents.blocks.attach(agentId, block.id!);
     
-    return block.id;
+    return block.id!;
   }
 
   private async listContextBlocks(agentId: string) {
-    return await this.lettaClient.agents.blocks.list({ agentId });
+    return await this.lettaClient.agents.blocks.list(agentId);
   }
 
   private async deleteContextBlock(agentId: string, blockId: string): Promise<void> {
-    await this.lettaClient.agents.blocks.detach({ agentId, blockId });
+    await this.lettaClient.agents.blocks.detach(agentId, blockId);
     await this.lettaClient.blocks.delete(blockId);
   }
 
@@ -69,7 +66,7 @@ export class Memory {
     await this.lettaClient.agents.delete(agentId);
   }
 
-  private async learnMessages(agentId: string, messages: Record<string, any>[]): Promise<string> {
+  private async learnMessages(agentId: string, messages: Record<string, any>[], skipVectorStorage: boolean = true): Promise<string> {
     const messageCreates = messages.map(msg => ({
       content: msg.content,
       role: msg.role,
@@ -81,12 +78,22 @@ export class Memory {
     console.log('FORMATTED MESSAGES', formattedMessages);
     console.log('AGENT ID', agentId);
     
-    const lettaRun = await this.lettaClient.agents.messages.createAsync({
-      agentId,
-      messages: formattedMessages,
+    const lettaRun = await this.lettaClient.agents.messages.createAsync(agentId, {
+      messages: formattedMessages as any,
     });
     
-    return lettaRun.id;
+    // Insert into archival in parallel if not skipping vector storage
+    if (!skipVectorStorage) {
+      const tasks = messages.map(message => 
+        this.lettaClient.agents.passages.create(agentId, {
+          text: message.content,
+          tags: [message.role],
+        })
+      );
+      await Promise.all(tasks);
+    }
+    
+    return lettaRun.id!;
   }
 
   private formatBlock(block: any): string {
@@ -98,7 +105,7 @@ export class Memory {
     if (!run) {
       throw new Error(`Run ${runId} not found`);
     }
-    return run.status;
+    return run.status!;
   }
 
   async waitForRun(runId: string): Promise<void> {
@@ -161,10 +168,15 @@ export class Memory {
       ''
     );
 
+    // Attach a single archival memory (workaround)
+    await this.lettaClient.agents.passages.create(agentId, {
+      text: `Initialized memory for user ${userId}`,
+    });
+
     return agentId;
   }
 
-  async addMessages(userId: string, messages: Record<string, any>[]): Promise<string> {
+  async addMessages(userId: string, messages: Record<string, any>[], skipVectorStorage: boolean = true): Promise<string> {
     let agentId: string;
     const agent = await this.getMatchingAgent([userId]);
     
@@ -174,7 +186,7 @@ export class Memory {
       agentId = await this.initializeUserMemory(userId);
     }
 
-    return await this.learnMessages(agentId, messages);
+    return await this.learnMessages(agentId, messages, skipVectorStorage);
   }
 
   async addFiles(files: Record<string, any>[]): Promise<never> {
@@ -205,11 +217,32 @@ export class Memory {
     return null;
   }
 
+  async getMemoryAgentId(userId: string): Promise<string | null> {
+    const agent = await this.getMatchingAgent([userId]);
+    if (agent) {
+      return agent.id;
+    }
+    return null;
+  }
+
   async deleteUser(userId: string): Promise<void> {
     const agent = await this.getMatchingAgent([userId]);
     if (agent) {
+      // Deleting the agent also deletes associated messages/blocks
       await this.lettaClient.agents.delete(agent.id);
       console.log(`Deleted agent ${agent.id} for user ${userId}`);
     }
+  }
+
+  async search(userId: string, query: string): Promise<string[]> {
+    const agent = await this.getMatchingAgent([userId]);
+    if (agent) {
+      const response = await this.lettaClient.agents.passages.search(agent.id, {
+        query,
+        tags: ['user'],
+      });
+      return response.results.map(result => result.content);
+    }
+    return [];
   }
 }
