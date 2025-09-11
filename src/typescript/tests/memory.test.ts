@@ -166,7 +166,7 @@ async function testReinitializationError() {
     try {
       await client.initializeUserMemory(testUserId, { reset: false });
     } catch (error) {
-      if (error.message.includes('already exists')) {
+      if (error instanceof Error && error.message.includes('already exists')) {
         errorThrown = true;
       } else {
         throw error;
@@ -192,7 +192,7 @@ async function testAddFilesNotImplemented() {
   try {
     await client.addFiles([]);
   } catch (error) {
-    if (error.message.includes('Not implemented')) {
+    if (error instanceof Error && error.message.includes('Not implemented')) {
       errorThrown = true;
     } else {
       throw error;
@@ -232,7 +232,7 @@ async function runAllTests() {
 
     console.log('✅ All Memory tests passed!');
   } catch (error) {
-    console.error('❌ Test failed:', error.message);
+    console.error('❌ Test failed:', error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
 }
