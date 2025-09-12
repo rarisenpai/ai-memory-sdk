@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { createInterface } from 'readline';
-import { Memory } from 'ai-memory-sdk';
+import { Memory } from '@letta-ai/memory-sdk';
 
 // Memory is a lightweight client around Letta, and will handle storing information
 // about user conversations.
@@ -38,7 +38,7 @@ async function chatWithMemories(message: string, userId: string = "default_user"
         // Name: Sarah
         // Interests: Likes cats (2025-09-04)
         // </human>
-        const userMemoryPrompt = await memory.getUserMemory(userId, { promptFormatted: true });
+        const userMemoryPrompt = await memory.getUserMemory(userId, true);
         console.log(userMemoryPrompt);
 
         // Generate the assistant response using the inference engine of your choice,
