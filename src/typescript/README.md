@@ -5,9 +5,9 @@ A TypeScript SDK for using Letta subagents for pluggable memory management. This
 ## Installation
 
 ```bash
-npm install @letta-ai/letta-client
+npm install @letta-ai/memory-sdk
 # or
-yarn add @letta-ai/letta-client
+yarn add @letta-ai/memory-sdk
 ```
 
 ## Setup
@@ -15,7 +15,6 @@ yarn add @letta-ai/letta-client
 1. Set your API keys:
 ```bash
 export LETTA_API_KEY="your-letta-api-key"
-export OPENAI_API_KEY="your-openai-api-key"  # Required for examples
 ```
 
 2. Build the project:
@@ -26,16 +25,11 @@ npm run build
 ## Quick Start
 
 ```typescript
-import { Memory } from './src/memory';
+import { Memory } from '@letta-ai/memory-sdk';
 
 // Initialize the memory client
 const client = new Memory({ 
   lettaApiKey: process.env.LETTA_API_KEY 
-});
-
-// Or connect to a local server
-const client = new Memory({ 
-  baseUrl: "http://localhost:8283" 
 });
 
 // Initialize user memory
