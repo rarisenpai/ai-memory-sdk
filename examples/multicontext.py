@@ -2,10 +2,10 @@ from ai_memory_sdk import Memory
 
 
 def instance_scoped_example():
-    print("== Instance-scoped context example ==")
-    memory = Memory(context_id="user_sarah")
+    print("== Instance-scoped subject example ==")
+    memory = Memory(subject_id="user_sarah")
 
-    # Create/ensure a block in this context
+    # Create/ensure a block in this subject
     memory.initialize_memory(
         label="preferences",
         description="Known user preferences.",
@@ -21,7 +21,7 @@ def instance_scoped_example():
         reset=True,
     )
 
-    # Add messages to the bound context (unified API)
+    # Add messages to the bound subject (unified API)
     run = memory.add_messages([
         {"role": "user", "content": "I love cats, and one time I went to the park"},
         {"role": "assistant", "content": "That sounds fun!"},
