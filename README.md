@@ -1,30 +1,31 @@
 # AI Memory SDK 
-An experimental SDK for adding agentic memory and learning in a pluggable way. When messages are added, subconsious memory agents process them to generate *learned context* that can be plugged into your system prompt, such as a user profile or a conversational summary. 
+Subconscious agents for LLM memory. This SDK gives you background “subconscious agents” that asynchronously learn about subjects and populate flexible blocks of memory you can plug into system prompts.
+
+- Subconscious agents: long‑running agents that process conversation history asynchronously.
+- Subjects: what memory is “about” (e.g., user_sarah, project_alpha, team_support).
+- Blocks: named memory sections under a subject (e.g., human, summary, policies, history, study_guide). Any label and description are permitted.
+- Messages: the conversation turns you feed the agent; it extracts and updates blocks accordingly.
+
+This enables user profiles and summaries, and broader use cases like policy digests, running histories, study guides, briefs — any domain‑specific memory you define.
+
+Quick mental model:
 ```
 +========================================+
 |         SYSTEM PROMPT                  |
 +========================================+
-|      LEARNED CONTEXT (HUMAN)           | <- memory agent (learning from message history)
+|   LEARNED BLOCKS (SUBJECT)             | <- subconscious agent updates over time
+|   - <human> ... </human>               |
+|   - <summary> ... </summary>           |
+|   - <policies> ... </policies>         |
+|   - <history> ... </history>           |
 +========================================+
 |           MESSAGES                     |
-|  * User -> Assistant                   |
 |  * User -> Assistant                   |
 |  * User -> Assistant                   |
 |  * ...                                 |
 +========================================+
 ```
-For a specific user, the memory agent will learn a `summary` block and a `human` block, formatted as follows:
-```html
-<conversation_summary>
-Sarah introduced herself and asked the assistant to tell about itself. The assistant provided a brief self-description and offered further help.
-</conversation_summary>
-
-<human description="Details about the human user you are speaking to.">
-Name: Sarah
-Interests: Likes cats (2025-09-03)
-</human>
-```
-Memories can also be explicitly searched with semantic search to retrieve relevant historical messages to place back into context. 
+Memories can also be explicitly searched with semantic search to retrieve relevant historical messages and place them back into context.
 
 ## Subject Model (Generalized API)
 In addition to the user-specific helpers, the SDK supports a generalized "subject" model:
@@ -97,10 +98,10 @@ await memory.waitForRun(run)
 1. Create a [Letta API key](https://app.letta.com/api-keys)
 2. Install: `pip install ai-memory-sdk`
 
-### Usage: Conversational Memory 
-You can save conversation histories using the Memory SDK, and later retrieve the learned context block to place into your system prompt. This allows your agents to have an evolving understand of the user. 
+### Usage: Generic Memory Blocks
+Save conversation histories and let the subconscious agent update any blocks you define (human, summary, policies, history, study_guide, ...). Retrieve learned blocks and plug them into your system prompts.
 
-**Example:** Create a basic OpenAI `gpt-4o-mini` chat agent with memory 
+**Example:** Create a basic OpenAI `gpt-4o-mini` chat agent with subject‑scoped memory
 
 ```python
 from openai import OpenAI
@@ -119,17 +120,13 @@ memory = Memory()
 openai_client = OpenAI()
 
 def chat_with_memories(message: str, user_id: str = "default_user") -> str:
-    # Retrieve the user memory block if it exists, otherwise initialize it
-    # User memory blocks are pieces of information about whoever is talking
-    # to your assistant, and can be created/retrieved using arbitrary string
-    # identifier keys.
+    # Retrieve or initialize the subject (using user helpers for simplicity)
     user_memory = memory.get_user_memory(user_id)
     if not user_memory:
-        # User doesn't exist, create a new memory block
         memory.initialize_user_memory(user_id, reset=True)
         user_memory = memory.get_user_memory(user_id)
 
-    # the contents of the user block formatted as a prompt:
+    # the contents of the human block formatted as a prompt:
     #
     # <human description="Details about the human user you are speaking to.">
     # Name: Sarah
@@ -159,7 +156,7 @@ def chat_with_memories(message: str, user_id: str = "default_user") -> str:
     assistant_response = response.choices[0].message.content
 
     # Create new memories from the conversation --
-    # this will update the user's memory block and persist messages
+    # this will update subject blocks and persist messages
     print("Creating new memories...")
     messages.append({"role": "assistant", "content": assistant_response})
     memory.add_messages(user_id, messages)
