@@ -202,7 +202,7 @@ const runId = await client.addMessages('user_123', [
 ], false); // Don't skip vector storage for searchability
 
 // Unified form with a bound context
-const bound = new Memory({ contextId: 'user:sarah' });
+const bound = new Memory({ subjectId: 'user_sarah' });
 const runId2 = await bound.addMessages([
   { role: 'user', content: 'I love cats' }
 ]);

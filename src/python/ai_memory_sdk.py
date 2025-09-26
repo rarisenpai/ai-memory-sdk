@@ -318,8 +318,8 @@ class Memory:
 
         Two modes:
         - Legacy user mode: add_messages(user_id: str, messages: List[...], skip_vector_storage=True)
-        - Context-bound mode: add_messages(messages: List[...], skip_vector_storage=True) when this instance
-          was constructed with a context_id.
+        - Subject-bound mode: add_messages(messages: List[...], skip_vector_storage=True) when this instance
+          was constructed with a subject_id.
         """
         # If first arg is a string, treat as legacy user mode
         if isinstance(user_or_messages, str):
@@ -333,12 +333,12 @@ class Memory:
                 agent_id = self.initialize_user_memory(user_id)
             return asyncio.run(self._learn_messages(agent_id, messages, skip_vector_storage=skip_vector_storage))
 
-        # Otherwise, treat first arg as the messages list and use the bound context
+        # Otherwise, treat first arg as the messages list and use the bound subject
         inferred_messages = user_or_messages
         if not isinstance(inferred_messages, list):
             raise ValueError("First argument must be a user_id (str) or a messages list (List[Dict]).")
-        cid = self._get_effective_context(None)
-        return self.add_messages_for_context(cid, inferred_messages, skip_vector_storage=skip_vector_storage)
+        sid = self._get_effective_subject(None)
+        return self.add_messages_for_subject(sid, inferred_messages, skip_vector_storage=skip_vector_storage)
 
     def add_files(self, files: List[Dict[str, Any]]):
         """ Learn about files """ 

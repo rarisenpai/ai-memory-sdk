@@ -35,7 +35,7 @@ In addition to the user-specific helpers, the SDK supports a generalized "subjec
 You can bind a Memory instance to a subject at construction time, or pass a subject per call.
 
 Naming conventions
-- Agents: the context_id is embedded in the agent name (e.g., `subconscious_agent_ctx_<context_id>`). Ensure your `context_id` uses only characters allowed by Letta agent names. Recommended: letters, numbers, underscores, and dashes. Avoid characters like `:` or other punctuation.
+- Agents: the subject_id is embedded in the agent name (e.g., `subconscious_agent_subject_<subject_id>`). Ensure your `subject_id` uses only characters allowed by Letta agent names. Recommended: letters, numbers, underscores, and dashes. Avoid characters like `:` or other punctuation.
 - Blocks and tags: follow your Letta deployment’s rules. Recommended: letters, numbers, underscores, and dashes.
 
 Python (instance-scoped):

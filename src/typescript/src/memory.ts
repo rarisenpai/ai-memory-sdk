@@ -303,7 +303,7 @@ export class Memory {
   async addMessages(userId: string, messages: Record<string, any>[], skipVectorStorage?: boolean): Promise<string>;
   async addMessages(arg1: any, arg2?: any, arg3?: any): Promise<string> {
     // Overloads:
-    // - addMessages(messages, skipVectorStorage?) when instance is bound to contextId
+    // - addMessages(messages, skipVectorStorage?) when instance is bound to subjectId
     // - addMessages(userId, messages, skipVectorStorage?) for legacy user mode
     if (typeof arg1 === 'string') {
       const userId = arg1 as string;
