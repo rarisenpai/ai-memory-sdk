@@ -24,9 +24,12 @@ class Memory:
         self.async_letta_client = AsyncLetta(token=api_key)
         # Optional default context for instance-scoped operations
         self.context_id = context_id
+        self._default_tag = "ai-memory-sdk"
 
     def _create_sleeptime_agent(self, name: str, tags: List[str]): 
         """ Create a subconscious agent that learns over time """ 
+        # Ensure default SDK tag is present
+        tags = list(dict.fromkeys((tags or []) + [self._default_tag]))
         agent_state = self.letta_client.agents.create(
             name=name,
             model="openai/gpt-4.1",
@@ -44,8 +47,8 @@ class Memory:
         return None
 
     def _context_tags(self, context_id: str) -> List[str]:
-        """Standardize tags for a context. Include both a namespaced and raw tag for compatibility."""
-        return [f"ctx:{context_id}", context_id]
+        """Standardize tags for a context. Include namespaced, raw, and SDK tag."""
+        return [f"ctx:{context_id}", context_id, self._default_tag]
 
     def _get_agent_for_context(self, context_id: str):
         """Find an agent for a given context. Tries both new and legacy tag styles."""
@@ -92,6 +95,7 @@ class Memory:
         self.letta_client.agents.passages.create(
             agent_id=agent_id,
             text=f"Initialized memory for context {context_id}",
+            tags=[self._default_tag],
         )
         return agent_id
 
@@ -142,7 +146,7 @@ class Memory:
                 self.async_letta_client.agents.passages.create(
                     agent_id=agent_id,
                     text=message["content"],
-                    tags=[message["role"]],
+                    tags=[message["role"], self._default_tag],
                 )
                 for message in messages
             ]
@@ -305,6 +309,7 @@ class Memory:
         self.letta_client.agents.passages.create(
             agent_id=agent_id,
             text=f"Initialized memory for user {user_id}",
+            tags=[self._default_tag],
         )
         return agent_id
             

@@ -18,12 +18,13 @@ export class Memory {
   }
 
   private async createSleeptimeAgent(name: string, tags: string[]): Promise<string> {
+    const withDefault = Array.from(new Set([...(tags || []), 'ai-memory-sdk']));
     const agentState = await this.lettaClient.agents.create({
       name,
       model: 'openai/gpt-4',
       agentType: 'sleeptime_agent',
       initialMessageSequence: [],
-      tags,
+      tags: withDefault,
     });
     return agentState.id;
   }
@@ -42,8 +43,8 @@ export class Memory {
   }
 
   private contextTags(contextId: string): string[] {
-    // Include both namespaced and raw for compatibility
-    return [`ctx:${contextId}`, contextId];
+    // Include namespaced, raw, and default SDK tag for compatibility and discoverability
+    return [`ctx:${contextId}`, contextId, 'ai-memory-sdk'];
   }
 
   private async getAgentForContext(contextId: string) {
@@ -94,7 +95,7 @@ export class Memory {
       initialMessageSequence: [],
       tags: this.contextTags(contextId),
     });
-    await this.lettaClient.agents.passages.create(agentState.id!, { text: `Initialized memory for context ${contextId}` });
+    await this.lettaClient.agents.passages.create(agentState.id!, { text: `Initialized memory for context ${contextId}`, tags: ['ai-memory-sdk'] });
     return agentState.id!;
   }
 
@@ -134,7 +135,7 @@ export class Memory {
       const tasks = messages.map(message => 
         this.lettaClient.agents.passages.create(agentId, {
           text: message.content,
-          tags: [message.role],
+          tags: [message.role, 'ai-memory-sdk'],
         })
       );
       await Promise.all(tasks);
@@ -292,6 +293,7 @@ export class Memory {
     // Attach a single archival memory (workaround)
     await this.lettaClient.agents.passages.create(agentId, {
       text: `Initialized memory for user ${userId}`,
+      tags: ['ai-memory-sdk'],
     });
 
     return agentId;
