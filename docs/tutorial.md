@@ -171,7 +171,7 @@ Python
        return assistant
 
 Troubleshooting
-- Invalid agent name: ensure your context id contains only letters, numbers, underscores, or dashes (e.g., user_sarah).
+- Invalid agent name: ensure your subject id contains only letters, numbers, underscores, or dashes (e.g., user_sarah).
 - Missing LETTA_API_KEY: set it in your environment before running.
 - Costs: prefer batching messages (e.g., 5–10) before calling add_messages to reduce compute.
 
