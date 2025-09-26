@@ -26,13 +26,13 @@ Interests: Likes cats (2025-09-03)
 ```
 Memories can also be explicitly searched with semantic search to retrieve relevant historical messages to place back into context. 
 
-## Context Model (Generalized API)
-In addition to the user-specific helpers, the SDK supports a generalized "context" model:
-- Context: the unit we learn for (one context = one Letta agent). For example, `user:sarah`, `team:alpha`, or `project:123`.
-- Blocks: named pieces of context (e.g. `human`, `summary`, `preferences`) attached to the context's agent.
+## Subject Model (Generalized API)
+In addition to the user-specific helpers, the SDK supports a generalized "subject" model:
+- Subject: the unit we learn for (one subject = one Letta agent). For example, `user_sarah`, `team_alpha`, or `project_123`.
+- Blocks: named pieces of memory (e.g. `human`, `summary`, `preferences`) attached to the subject's agent.
 - Messages: conversation turns the learner uses to update one or more blocks.
 
-You can bind a Memory instance to a context at construction time, or pass a context per call.
+You can bind a Memory instance to a subject at construction time, or pass a subject per call.
 
 Naming conventions
 - Agents: the context_id is embedded in the agent name (e.g., `subconscious_agent_ctx_<context_id>`). Ensure your `context_id` uses only characters allowed by Letta agent names. Recommended: letters, numbers, underscores, and dashes. Avoid characters like `:` or other punctuation.
@@ -42,16 +42,16 @@ Python (instance-scoped):
 ```python
 from ai_memory_sdk import Memory
 
-memory = Memory(context_id="user_sarah")
+memory = Memory(subject_id="user_sarah")
 
-# Create a new block in this context (no-op if it exists and reset=False)
+# Create a new block in this subject (no-op if it exists and reset=False)
 memory.initialize_memory(
     label="preferences",
     description="Known user preferences.",
     value="Likes cats",
 )
 
-# Add conversation messages to the bound context (unified API)
+# Add conversation messages to the bound subject (unified API)
 memory.add_messages([
     {"role": "user", "content": "I love cats"}
 ])
@@ -61,35 +61,35 @@ raw = memory.get_memory("preferences")
 formatted = memory.get_memory("preferences", prompt_formatted=True)
 ```
 
-Python (explicit context):
+Python (explicit subject):
 ```python
 from ai_memory_sdk import Memory
 
 memory = Memory()
-memory.initialize_context("project_alpha", reset=True)
-memory.initialize_memory("spec", "Project spec", value="v1", context_id="project_alpha")
-run = memory.add_messages_for_context("project_alpha", [{"role": "user", "content": "Kickoff done"}])
+memory.initialize_subject("project_alpha", reset=True)
+memory.initialize_memory("spec", "Project spec", value="v1", subject_id="project_alpha")
+run = memory.add_messages_for_subject("project_alpha", [{"role": "user", "content": "Kickoff done"}])
 memory.wait_for_run(run)
-spec = memory.get_memory("spec", context_id="project_alpha")
+spec = memory.get_memory("spec", subject_id="project_alpha")
 ```
 
 TypeScript (instance-scoped):
 ```ts
 import { Memory } from '@letta-ai/memory-sdk'
 
-const memory = new Memory({ contextId: 'user_sarah' })
+const memory = new Memory({ subjectId: 'user_sarah' })
 await memory.initializeMemory('preferences', 'Known user preferences.', 'Likes cats')
 // unified API when instance is bound to a context
 await memory.addMessages([{ role: 'user', content: 'I love cats' }])
 const formatted = await memory.getMemory('preferences', true)
 ```
 
-TypeScript (explicit context):
+TypeScript (explicit subject):
 ```ts
 const memory = new Memory()
-await memory.initializeContext('project_alpha', true)
+await memory.initializeSubject('project_alpha', true)
 await memory.initializeMemory('spec', 'Project spec', 'v1', 10000, false, 'project_alpha')
-const run = await memory.addMessagesToContext('project_alpha', [{ role: 'user', content: 'Kickoff done' }])
+const run = await memory.addMessagesToSubject('project_alpha', [{ role: 'user', content: 'Kickoff done' }])
 await memory.waitForRun(run)
 ```
 
@@ -213,27 +213,27 @@ user_memory = memory.get_user_memory("user_id", prompt_formatted=True)
 ```
 To get the raw value of the context block, you can pass `prompt_formatted=False`. 
 
-### Generalized Context API
-You can work with arbitrary contexts (one context = one Letta agent) and labeled blocks within them. You can bind a `Memory` instance to a context or pass a context per call.
+### Generalized Subject API
+You can work with arbitrary subjects (one subject = one Letta agent) and labeled blocks within them. You can bind a `Memory` instance to a subject or pass a subject per call.
 
-Constructor (instance-scoped context):
+Constructor (instance-scoped subject):
 ```python
 from ai_memory_sdk import Memory
-memory = Memory(context_id="user:sarah")
+memory = Memory(subject_id="user_sarah")
 ```
 
-Context methods (Python):
-- `initialize_context(context_id: str, reset: bool = False) -> str`
-- `list_blocks(context_id: Optional[str] = None) -> list`
-- `initialize_memory(label: str, description: str, value: str = "", char_limit: int = 10000, reset: bool = False, context_id: Optional[str] = None) -> str`
-- `get_memory(label: str, prompt_formatted: bool = False, context_id: Optional[str] = None) -> Optional[str]`
-- `delete_block(label: str, context_id: Optional[str] = None) -> None`
-- `add_messages_for_context(context_id: str, messages: list, skip_vector_storage: bool = True) -> str`
-- Unified: `add_messages(messages: list, skip_vector_storage: bool = True) -> str` (uses bound `context_id`)
+Subject methods (Python):
+- `initialize_subject(subject_id: str, reset: bool = False) -> str`
+- `list_blocks(subject_id: Optional[str] = None) -> list`
+- `initialize_memory(label: str, description: str, value: str = "", char_limit: int = 10000, reset: bool = False, subject_id: Optional[str] = None) -> str`
+- `get_memory(label: str, prompt_formatted: bool = False, subject_id: Optional[str] = None) -> Optional[str]`
+- `delete_block(label: str, subject_id: Optional[str] = None) -> None`
+- `add_messages_for_subject(subject_id: str, messages: list, skip_vector_storage: bool = True) -> str`
+- Unified: `add_messages(messages: list, skip_vector_storage: bool = True) -> str` (uses bound `subject_id`)
 
 Example:
 ```python
-memory = Memory(context_id="user:sarah")
+memory = Memory(subject_id="user_sarah")
 memory.initialize_memory("preferences", "Known user preferences.", "Likes cats")
 run = memory.add_messages([{ "role": "user", "content": "I love cats" }])
 memory.wait_for_run(run)
@@ -267,8 +267,8 @@ memory.delete_user("user_id")
 
 ## Examples
 - Conversational memory with user helpers: `examples/chat.py`
-- Context-based demo (generalized API): `examples/context.py`
-- TypeScript context demo: `examples/context.ts`
+- Subject-based demo (generalized API): `examples/subject.py`
+- TypeScript subject demo: `examples/subject.ts`
 - Full tutorial: `docs/tutorial.md`
 
 
@@ -279,9 +279,9 @@ memory.delete_user("user_id")
 - [ ] TypeScript support 
 - [ ] Learning from files
 - [ ] Add "sleep" (offline collective revisioning of all data)  
-You can also bind a context and call the unified method:
+You can also bind a subject and call the unified method:
 ```python
-memory = Memory(context_id="user_sarah")
+memory = Memory(subject_id="user_sarah")
 run = memory.add_messages([{"role": "user", "content": "hi"}])
 ```
 

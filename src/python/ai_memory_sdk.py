@@ -9,21 +9,21 @@ from schemas import MessageCreate
 class Memory: 
     """ A memory SDK for Letta
 
-    Adds a general "context" model while keeping user-specific helpers.
-    One context maps to one Letta agent; multiple labeled blocks (e.g. "human",
-    "summary", "preferences") can be attached to that context.
+    Adds a general "subject" model while keeping user-specific helpers.
+    One subject maps to one Letta agent; multiple labeled blocks (e.g. "human",
+    "summary", "preferences") can be attached to that subject.
     """
 
     def __init__(self, 
         api_key: Optional[str] = None,
-        context_id: Optional[str] = None,
+        subject_id: Optional[str] = None,
     ):
         if api_key is None:
             api_key = os.getenv("LETTA_API_KEY")
         self.letta_client = Letta(token=api_key)
         self.async_letta_client = AsyncLetta(token=api_key)
-        # Optional default context for instance-scoped operations
-        self.context_id = context_id
+        # Optional default subject for instance-scoped operations
+        self.subject_id = subject_id
         self._default_tag = "ai-memory-sdk"
 
     def _create_sleeptime_agent(self, name: str, tags: List[str]): 
@@ -46,22 +46,22 @@ class Memory:
             return agents[0]
         return None
 
-    def _context_tags(self, context_id: str) -> List[str]:
-        """Standardize tags for a context. Include namespaced, raw, and SDK tag."""
-        return [f"ctx:{context_id}", context_id, self._default_tag]
+    def _subject_tags(self, subject_id: str) -> List[str]:
+        """Standardize tags for a subject. Include namespaced, raw, and SDK tag."""
+        return [f"subj:{subject_id}", subject_id, self._default_tag]
 
-    def _get_agent_for_context(self, context_id: str):
-        """Find an agent for a given context. Tries both new and legacy tag styles."""
+    def _get_agent_for_subject(self, subject_id: str):
+        """Find an agent for a given subject. Tries both new and legacy tag styles."""
         # Prefer the namespaced tag
-        agent = self._get_matching_agent(tags=[f"ctx:{context_id}"])
+        agent = self._get_matching_agent(tags=[f"subj:{subject_id}"])
         if agent:
             return agent
-        # Fallback to legacy behavior that used raw tag only
-        return self._get_matching_agent(tags=[context_id])
+        # Fallback to raw tag only
+        return self._get_matching_agent(tags=[subject_id])
 
 
     def _create_context_block(self, agent_id: str, label: str, description: str, char_limit: int = 10000, value: str = ""):
-        """ Create a context block """ 
+        """ Create a subject block """ 
         block = self.letta_client.blocks.create(
             label=label,
             description=description,
@@ -72,7 +72,7 @@ class Memory:
         return block.id
 
     def _list_context_blocks(self, agent_id: str):
-        """ List all context blocks for an agent """ 
+        """ List all subject blocks for an agent """ 
         return self.letta_client.agents.blocks.list(agent_id=agent_id)
 
     def _delete_context_block(self, agent_id: str, block_id: str):
@@ -84,28 +84,28 @@ class Memory:
         """ Delete an agent """ 
         self.letta_client.agents.delete(agent_id=agent_id)
 
-    def _ensure_context(self, context_id: str) -> str:
-        """Ensure a context exists and return its agent id."""
-        agent = self._get_agent_for_context(context_id)
+    def _ensure_subject(self, subject_id: str) -> str:
+        """Ensure a subject exists and return its agent id."""
+        agent = self._get_agent_for_subject(subject_id)
         if agent:
             return agent.id
-        # Create a new agent for this context with both tags for compatibility
-        agent_id = self._create_sleeptime_agent(name=f"subconscious_agent_ctx_{context_id}", tags=self._context_tags(context_id))
+        # Create a new agent for this subject with both tags for compatibility
+        agent_id = self._create_sleeptime_agent(name=f"subconscious_agent_subject_{subject_id}", tags=self._subject_tags(subject_id))
         # Attach a single archival memory (workaround / anchor)
         self.letta_client.agents.passages.create(
             agent_id=agent_id,
-            text=f"Initialized memory for context {context_id}",
+            text=f"Initialized memory for subject {subject_id}",
             tags=[self._default_tag],
         )
         return agent_id
 
-    def _get_effective_context(self, context_id: Optional[str]) -> str:
-        """Resolve the effective context id, preferring the instance default if not provided."""
-        cid = context_id or self.context_id
-        if not cid:
-            raise ValueError("No context_id provided and instance is not bound to a context. "
-                             "Pass context_id=... or initialize Memory(context_id=...).")
-        return cid
+    def _get_effective_subject(self, subject_id: Optional[str]) -> str:
+        """Resolve the effective subject id, preferring the instance default if not provided."""
+        sid = subject_id or self.subject_id
+        if not sid:
+            raise ValueError("No subject_id provided and instance is not bound to a subject. "
+                             "Pass subject_id=... or initialize Memory(subject_id=...).")
+        return sid
 
     def _find_block_by_label(self, agent_id: str, label: str):
         """Find a block object attached to an agent by label, or return None."""
@@ -171,28 +171,28 @@ class Memory:
         while self._get_run_status(run_id) != "completed":
             time.sleep(1)
 
-    # ===== General Context API =====
+    # ===== General Subject API =====
 
-    def initialize_context(self, context_id: str, reset: bool = False) -> str:
-        """Initialize a context (agent). If it exists and reset is False, raise; otherwise recreate.
+    def initialize_subject(self, subject_id: str, reset: bool = False) -> str:
+        """Initialize a subject (agent). If it exists and reset is False, raise; otherwise recreate.
 
-        Returns the agent id for the context.
+        Returns the agent id for the subject.
         """
-        agent = self._get_agent_for_context(context_id)
+        agent = self._get_agent_for_subject(subject_id)
         if agent:
             if reset:
                 self._delete_agent(agent.id)
             else:
                 raise ValueError(
-                    f"Agent {agent.id} already exists for context {context_id}. "
+                    f"Agent {agent.id} already exists for subject {subject_id}. "
                     f"Cannot re-initialize unless reset=True."
                 )
-        return self._ensure_context(context_id)
+        return self._ensure_subject(subject_id)
 
-    def list_blocks(self, context_id: Optional[str] = None):
-        """List all blocks for a context. If instance is bound, context_id may be omitted."""
-        cid = self._get_effective_context(context_id)
-        agent = self._get_agent_for_context(cid)
+    def list_blocks(self, subject_id: Optional[str] = None):
+        """List all blocks for a subject. If instance is bound, subject_id may be omitted."""
+        sid = self._get_effective_subject(subject_id)
+        agent = self._get_agent_for_subject(sid)
         if not agent:
             return []
         return self._list_context_blocks(agent.id)
@@ -204,14 +204,14 @@ class Memory:
         value: str = "",
         char_limit: int = 10000,
         reset: bool = False,
-        context_id: Optional[str] = None,
+        subject_id: Optional[str] = None,
     ) -> str:
-        """Create (or optionally reset) a labeled block within a context.
+        """Create (or optionally reset) a labeled block within a subject.
 
         If the block exists and reset=False, this is a no-op and returns the existing block id.
         """
-        cid = self._get_effective_context(context_id)
-        agent_id = self._ensure_context(cid)
+        sid = self._get_effective_subject(subject_id)
+        agent_id = self._ensure_subject(sid)
 
         existing = self._find_block_by_label(agent_id, label)
         if existing and reset:
@@ -233,11 +233,11 @@ class Memory:
         self,
         label: str,
         prompt_formatted: bool = False,
-        context_id: Optional[str] = None,
+        subject_id: Optional[str] = None,
     ) -> Optional[str]:
-        """Retrieve a labeled block from a context. Returns None if missing."""
-        cid = self._get_effective_context(context_id)
-        agent = self._get_agent_for_context(cid)
+        """Retrieve a labeled block from a subject. Returns None if missing."""
+        sid = self._get_effective_subject(subject_id)
+        agent = self._get_agent_for_subject(sid)
         if not agent:
             return None
         block = self._find_block_by_label(agent.id, label)
@@ -250,34 +250,34 @@ class Memory:
             value = block.get("value")
         return value
 
-    def delete_block(self, label: str, context_id: Optional[str] = None):
-        """Delete a labeled block from a context if it exists."""
-        cid = self._get_effective_context(context_id)
-        agent = self._get_agent_for_context(cid)
+    def delete_block(self, label: str, subject_id: Optional[str] = None):
+        """Delete a labeled block from a subject if it exists."""
+        sid = self._get_effective_subject(subject_id)
+        agent = self._get_agent_for_subject(sid)
         if not agent:
             return
         block = self._find_block_by_label(agent.id, label)
         if block:
             self._delete_context_block(agent.id, self._block_id(block))
 
-    def add_messages_for_context(
+    def add_messages_for_subject(
         self,
-        context_id: str,
+        subject_id: str,
         messages: List[Dict[str, Any]],
         skip_vector_storage: bool = True,
     ) -> str:
-        """Add messages to a specific context (generalized API)."""
-        agent = self._get_agent_for_context(context_id)
+        """Add messages to a specific subject (generalized API)."""
+        agent = self._get_agent_for_subject(subject_id)
         if agent:
             agent_id = agent.id
         else:
-            agent_id = self._ensure_context(context_id)
+            agent_id = self._ensure_subject(subject_id)
         return asyncio.run(self._learn_messages(agent_id, messages, skip_vector_storage=skip_vector_storage))
 
     def add_messages_here(self, messages: List[Dict[str, Any]], skip_vector_storage: bool = True) -> str:
-        """Add messages using the instance's bound context_id."""
-        cid = self._get_effective_context(None)
-        return self.add_messages_for_context(cid, messages, skip_vector_storage=skip_vector_storage)
+        """Add messages using the instance's bound subject_id."""
+        sid = self._get_effective_subject(None)
+        return self.add_messages_for_subject(sid, messages, skip_vector_storage=skip_vector_storage)
 
     def initialize_user_memory(self, 
         user_id: str, 

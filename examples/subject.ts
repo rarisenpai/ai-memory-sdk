@@ -1,8 +1,8 @@
 import { Memory } from '@letta-ai/memory-sdk';
 
 async function instanceScopedExample() {
-  console.log('== Instance-scoped context example ==');
-  const memory = new Memory({ contextId: 'user_sarah' });
+  console.log('== Instance-scoped subject example ==');
+  const memory = new Memory({ subjectId: 'user_sarah' });
 
   await memory.initializeMemory('preferences', 'Known user preferences.', 'Likes cats', 10000, true);
 
@@ -25,13 +25,13 @@ async function instanceScopedExample() {
 }
 
 async function explicitContextExample() {
-  console.log('== Explicit context example ==');
+  console.log('== Explicit subject example ==');
   const memory = new Memory();
 
-  await memory.initializeContext('project_alpha', true);
+  await memory.initializeSubject('project_alpha', true);
   await memory.initializeMemory('spec', 'Project spec', 'v1', 10000, false, 'project_alpha');
 
-  const run = await memory.addMessagesToContext('project_alpha', [
+  const run = await memory.addMessagesToSubject('project_alpha', [
     { role: 'user', content: 'Kickoff complete' },
   ]);
   await memory.waitForRun(run);

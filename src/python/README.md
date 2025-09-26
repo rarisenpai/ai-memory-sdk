@@ -16,5 +16,4 @@ Quick install locally (editable):
 
 3. Or run an example (requires LETTA_API_KEY set for networked calls):
 
-   uv run python ../../examples/context.py
-
+   uv run python ../../examples/subject.py

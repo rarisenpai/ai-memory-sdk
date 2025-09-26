@@ -2,7 +2,7 @@ AI Memory SDK Tutorial
 
 This guide walks through the core concepts and end‑to‑end usage of the AI Memory SDK in both Python and TypeScript. You will learn how to:
 
-- Model “context” (what the SDK learns for)
+- Model “subject” (what the SDK learns for)
 - Create and manage labeled blocks of memory (e.g., human, summary, preferences)
 - Add messages with the unified API and wait for learning to complete
 - Search past messages with semantic search
@@ -13,13 +13,13 @@ Prerequisites
 - Python 3.8+ or Node.js 18+
 
 Key Concepts
-- Context: the unit we learn for. One context maps to one Letta agent (e.g., user_sarah, project_alpha). All blocks and messages under a context are co‑learned by the same agent.
-- Blocks: named pieces of context attached to the agent (e.g., human, summary, preferences).
+- Subject: the unit we learn for. One subject maps to one Letta agent (e.g., user_sarah, project_alpha). All blocks and messages under a subject are co‑learned by the same agent.
+- Blocks: named pieces of subject state attached to the agent (e.g., human, summary, preferences).
 - Messages: conversation turns that the learner processes to update blocks.
 - Tagging: agents and passages created by this SDK are tagged with ai-memory-sdk for discoverability. Default search uses this tag + role filters.
 
 Naming Conventions
-- Use letters, numbers, underscores, or dashes for context ids, block labels, and tags.
+- Use letters, numbers, underscores, or dashes for subject ids, block labels, and tags.
 - Avoid characters like ':' in names to prevent API validation errors.
 
 Python Setup
@@ -43,12 +43,12 @@ TypeScript Setup
 3) Build TypeScript if using local sources:
    npm run build
 
-Quickstart: Instance‑Scoped Context
+Quickstart: Instance‑Scoped Subject
 Python
    from ai_memory_sdk import Memory
 
-   # Bind a Memory instance to a context
-   memory = Memory(context_id="user_sarah")
+   # Bind a Memory instance to a subject
+   memory = Memory(subject_id="user_sarah")
 
    # Create a block (no‑op if it exists and reset=False)
    memory.initialize_memory(
@@ -67,7 +67,7 @@ Python
 TypeScript
    import { Memory } from '@letta-ai/memory-sdk'
 
-   const memory = new Memory({ contextId: 'user_sarah' })
+   const memory = new Memory({ subjectId: 'user_sarah' })
    await memory.initializeMemory('preferences', 'Known user preferences.', 'Likes cats')
 
    const run = await memory.addMessages([{ role: 'user', content: 'I love cats' }])
@@ -75,29 +75,29 @@ TypeScript
 
    console.log(await memory.getMemory('preferences', true))
 
-Explicit Context Per Call
+Explicit Subject Per Call
 Python
    from ai_memory_sdk import Memory
 
    memory = Memory()
-   memory.initialize_context("project_alpha", reset=True)
-   memory.initialize_memory("spec", "Project spec", value="v1", context_id="project_alpha")
+   memory.initialize_subject("project_alpha", reset=True)
+   memory.initialize_memory("spec", "Project spec", value="v1", subject_id="project_alpha")
 
-   run = memory.add_messages_for_context("project_alpha", [
+   run = memory.add_messages_for_subject("project_alpha", [
        { "role": "user", "content": "Kickoff complete" }
    ])
    memory.wait_for_run(run)
 
-   print(memory.get_memory("spec", context_id="project_alpha"))
+   print(memory.get_memory("spec", subject_id="project_alpha"))
 
 TypeScript
    import { Memory } from '@letta-ai/memory-sdk'
 
    const memory = new Memory()
-   await memory.initializeContext('project_alpha', true)
+   await memory.initializeSubject('project_alpha', true)
    await memory.initializeMemory('spec', 'Project spec', 'v1', 10000, false, 'project_alpha')
 
-   const run = await memory.addMessagesToContext('project_alpha', [
+   const run = await memory.addMessagesToSubject('project_alpha', [
      { role: 'user', content: 'Kickoff complete' },
    ])
    await memory.waitForRun(run)
@@ -106,20 +106,20 @@ TypeScript
 
 Managing Blocks
 - Create or reset a block
-  - Python: initialize_memory(label, description, value='', char_limit=10000, reset=False, context_id=None)
-  - TS: initializeMemory(label, description, value?, charLimit=10000, reset=false, contextId?)
+  - Python: initialize_memory(label, description, value='', char_limit=10000, reset=False, subject_id=None)
+  - TS: initializeMemory(label, description, value?, charLimit=10000, reset=false, subjectId?)
 - List blocks
-  - Python: list_blocks(context_id=None)
-  - TS: listBlocks(contextId?)
+  - Python: list_blocks(subject_id=None)
+  - TS: listBlocks(subjectId?)
 - Delete a block
-  - Python: delete_block(label, context_id=None)
-  - TS: deleteBlock(label, contextId?)
+  - Python: delete_block(label, subject_id=None)
+  - TS: deleteBlock(label, subjectId?)
 - Read a block
-  - Python: get_memory(label, prompt_formatted=False, context_id=None)
-  - TS: getMemory(label, promptFormatted=false, contextId?)
+  - Python: get_memory(label, prompt_formatted=False, subject_id=None)
+  - TS: getMemory(label, promptFormatted=false, subjectId?)
 
 Adding Messages (Unified)
-- If your Memory instance is bound to a context:
+- If your Memory instance is bound to a subject:
   - Python: add_messages(messages, skip_vector_storage=True)
   - TS: addMessages(messages, skipVectorStorage = true)
 - Legacy user form stays supported:
@@ -176,12 +176,11 @@ Troubleshooting
 - Costs: prefer batching messages (e.g., 5–10) before calling add_messages to reduce compute.
 
 Testing Locally (Offline)
-- Python: run the offline context tests (no network):
+- Python: run the offline subject tests (no network):
    cd src/python
    uv pip install -e .
-   uv run pytest -q tests/test_context.py
+   uv run pytest -q tests/test_subject.py
 
-- TypeScript: context tests (no network):
+- TypeScript: subject tests (no network):
    npm run build
-   npm run test:context
-
+   npm run test:subject

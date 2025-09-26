@@ -128,8 +128,8 @@ sys.modules['letta_client'] = letta_client
 from ai_memory_sdk import Memory  # noqa: E402
 
 
-def test_instance_scoped_context():
-    memory = Memory(context_id="user:sarah")
+def test_instance_scoped_subject():
+    memory = Memory(subject_id="user_sarah")
 
     memory.initialize_memory(
         label="preferences",
@@ -138,7 +138,7 @@ def test_instance_scoped_context():
         reset=True,
     )
 
-    # Use unified add_messages with bound context
+    # Use unified add_messages with bound subject
     run = memory.add_messages([
         {"role": "user", "content": "I love cats"}
     ])
@@ -158,21 +158,21 @@ def test_instance_scoped_context():
     assert memory.get_memory("preferences") is None
 
 
-def test_explicit_context():
+def test_explicit_subject():
     memory = Memory()
 
-    agent_id = memory.initialize_context("project:alpha", reset=True)
+    agent_id = memory.initialize_subject("project_alpha", reset=True)
     assert isinstance(agent_id, str)
 
     memory.initialize_memory(
         label="spec",
         description="Project spec",
         value="v1",
-        context_id="project:alpha",
+        subject_id="project_alpha",
     )
 
-    run = memory.add_messages_for_context("project:alpha", [{"role": "user", "content": "Kickoff complete"}])
+    run = memory.add_messages_for_subject("project_alpha", [{"role": "user", "content": "Kickoff complete"}])
     memory.wait_for_run(run)
 
-    spec = memory.get_memory("spec", context_id="project:alpha")
+    spec = memory.get_memory("spec", subject_id="project_alpha")
     assert spec == "v1"

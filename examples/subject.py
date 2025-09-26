@@ -2,10 +2,10 @@ from ai_memory_sdk import Memory
 
 
 def instance_scoped_example():
-    print("== Instance-scoped context example ==")
-    memory = Memory(context_id="user_sarah")
+    print("== Instance-scoped subject example ==")
+    memory = Memory(subject_id="user_sarah")
 
-    # Create/ensure a block in this context
+    # Create/ensure a block in this subject
     memory.initialize_memory(
         label="preferences",
         description="Known user preferences.",
@@ -13,7 +13,7 @@ def instance_scoped_example():
         reset=True,
     )
 
-    # Add messages to the bound context (unified API)
+    # Add messages to the bound subject (unified API)
     run = memory.add_messages([
         {"role": "user", "content": "I love cats"}
     ])
@@ -32,31 +32,31 @@ def instance_scoped_example():
     print("Deleted 'preferences'")
 
 
-def explicit_context_example():
-    print("== Explicit context example ==")
+def explicit_subject_example():
+    print("== Explicit subject example ==")
     memory = Memory()
 
-    # Initialize a named context (agent)
-    memory.initialize_context("project_alpha", reset=True)
+    # Initialize a named subject (agent)
+    memory.initialize_subject("project_alpha", reset=True)
 
-    # Create a block under this context
+    # Create a block under this subject
     memory.initialize_memory(
         label="spec",
         description="Project spec",
         value="v1",
-        context_id="project:alpha",
+        subject_id="project_alpha",
     )
 
-    # Add messages to that context
-    run = memory.add_messages_for_context("project_alpha", [
+    # Add messages to that subject
+    run = memory.add_messages_for_subject("project_alpha", [
         {"role": "user", "content": "Kickoff complete"}
     ])
     memory.wait_for_run(run)
 
-    spec = memory.get_memory("spec", context_id="project_alpha")
+    spec = memory.get_memory("spec", subject_id="project_alpha")
     print("Spec:", spec)
 
 
 if __name__ == "__main__":
     instance_scoped_example()
-    explicit_context_example()
+    explicit_subject_example()

@@ -79,14 +79,14 @@ function createFakeLetta() {
 }
 
 async function testInstanceScopedContext() {
-  console.log('Testing instance-scoped context...');
+  console.log('Testing instance-scoped subject...');
 
-  const memory = new Memory({ contextId: 'user:sarah' });
+  const memory = new Memory({ subjectId: 'user_sarah' });
   // Inject fake client
   (memory as any).lettaClient = createFakeLetta();
 
   await memory.initializeMemory('preferences', 'Known user preferences.', 'Likes cats', 10000, true);
-  // Use unified addMessages with bound context
+  // Use unified addMessages with bound subject
   const run = await memory.addMessages([{ role: 'user', content: 'I love cats' }]);
   await memory.waitForRun(run);
 
@@ -107,24 +107,24 @@ async function testInstanceScopedContext() {
   const afterDelete = await memory.getMemory('preferences');
   if (afterDelete !== null) throw new Error(`Expected null after delete, got ${afterDelete}`);
 
-  console.log('✓ Instance-scoped context passed');
+  console.log('✓ Instance-scoped subject passed');
 }
 
 async function testExplicitContext() {
-  console.log('Testing explicit context...');
+  console.log('Testing explicit subject...');
 
   const memory = new Memory();
   (memory as any).lettaClient = createFakeLetta();
 
-  await memory.initializeContext('project:alpha', true);
+  await memory.initializeSubject('project_alpha', true);
   await memory.initializeMemory('spec', 'Project spec', 'v1', 10000, false, 'project:alpha');
-  const run = await memory.addMessagesToContext('project:alpha', [{ role: 'user', content: 'Kickoff complete' }]);
+  const run = await memory.addMessagesToSubject('project_alpha', [{ role: 'user', content: 'Kickoff complete' }]);
   await memory.waitForRun(run);
 
   const spec = await memory.getMemory('spec', false, 'project:alpha');
   if (spec !== 'v1') throw new Error(`Expected 'v1', got ${spec}`);
 
-  console.log('✓ Explicit context passed');
+  console.log('✓ Explicit subject passed');
 }
 
 async function runAllTests() {
