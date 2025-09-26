@@ -4,14 +4,17 @@ import { MessageCreate } from './schemas';
 
 export interface MemoryConfig {
   lettaApiKey?: string;
+  contextId?: string; // Optional default context for instance-scoped operations
 }
 
 export class Memory {
   private lettaClient: LettaClient;
+  private contextId?: string;
 
   constructor(config: MemoryConfig = {}) {
     const apiKey = config.lettaApiKey || process.env.LETTA_API_KEY;
     this.lettaClient = new LettaClient({ token: apiKey });
+    this.contextId = config.contextId;
   }
 
   private async createSleeptimeAgent(name: string, tags: string[]): Promise<string> {
@@ -31,6 +34,21 @@ export class Memory {
       matchAllTags: true,
     });
     return agents.length > 0 ? agents[0] : null;
+  }
+
+  private async findAgentByTag(tag: string) {
+    const agents = await this.lettaClient.agents.list({ tags: [tag], matchAllTags: true });
+    return agents.length > 0 ? agents[0] : null;
+  }
+
+  private contextTags(contextId: string): string[] {
+    // Include both namespaced and raw for compatibility
+    return [`ctx:${contextId}`, contextId];
+  }
+
+  private async getAgentForContext(contextId: string) {
+    // Prefer namespaced tag, fallback to legacy raw tag
+    return (await this.findAgentByTag(`ctx:${contextId}`)) || (await this.findAgentByTag(contextId));
   }
 
   private async createContextBlock(
@@ -65,6 +83,35 @@ export class Memory {
   private async deleteAgent(agentId: string): Promise<void> {
     await this.lettaClient.agents.delete(agentId);
   }
+
+  private async ensureContext(contextId: string): Promise<string> {
+    const existing = await this.getAgentForContext(contextId);
+    if (existing) return existing.id;
+    const agentState = await this.lettaClient.agents.create({
+      name: `subconscious_agent_ctx_${contextId}`,
+      model: 'openai/gpt-4',
+      agentType: 'sleeptime_agent',
+      initialMessageSequence: [],
+      tags: this.contextTags(contextId),
+    });
+    await this.lettaClient.agents.passages.create(agentState.id!, { text: `Initialized memory for context ${contextId}` });
+    return agentState.id!;
+  }
+
+  private getEffectiveContext(passed?: string): string {
+    const cid = passed ?? this.contextId;
+    if (!cid) {
+      throw new Error('No contextId provided and instance is not bound to a context. Pass contextId=... or set in constructor.');
+    }
+    return cid;
+  }
+
+  private async getBlockByLabel(agentId: string, label: string): Promise<any | null> {
+    const blocks = await this.lettaClient.agents.blocks.list(agentId);
+    return blocks.find((b: any) => (b as any).label === label) ?? null;
+  }
+
+  // Users must follow naming conventions for agents/blocks/tags; no sanitization is applied here.
 
   private async learnMessages(agentId: string, messages: Record<string, any>[], skipVectorStorage: boolean = true): Promise<string> {
     const messageCreates = messages.map(msg => ({
@@ -112,6 +159,80 @@ export class Memory {
     while (await this.getRunStatus(runId) !== 'completed') {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
+  }
+
+  // ===== General Context API =====
+
+  async initializeContext(contextId: string, reset: boolean = false): Promise<string> {
+    const existing = await this.getAgentForContext(contextId);
+    if (existing) {
+      if (reset) {
+        await this.deleteAgent(existing.id);
+      } else {
+        throw new Error(`Agent ${existing.id} already exists for context ${contextId}. Cannot re-initialize unless reset=true.`);
+      }
+    }
+    return await this.ensureContext(contextId);
+  }
+
+  async listBlocks(contextId?: string): Promise<any[]> {
+    const cid = this.getEffectiveContext(contextId);
+    const agent = await this.getAgentForContext(cid);
+    if (!agent) return [];
+    return await this.lettaClient.agents.blocks.list(agent.id);
+  }
+
+  async initializeMemory(
+    label: string,
+    description: string,
+    value: string = '',
+    charLimit: number = 10000,
+    reset: boolean = false,
+    contextId?: string,
+  ): Promise<string> {
+    const cid = this.getEffectiveContext(contextId);
+    const agentId = await this.ensureContext(cid);
+
+    let existing = await this.getBlockByLabel(agentId, label);
+    if (existing && reset) {
+      await this.deleteBlock(label, cid);
+      existing = null;
+    }
+    if (existing) {
+      return (existing as any).id;
+    }
+    return await this.createContextBlock(agentId, label, description, charLimit, value);
+  }
+
+  async getMemory(label: string, promptFormatted: boolean = false, contextId?: string): Promise<string | null> {
+    const cid = this.getEffectiveContext(contextId);
+    const agent = await this.getAgentForContext(cid);
+    if (!agent) return null;
+    const block = await this.getBlockByLabel(agent.id, label);
+    if (!block) return null;
+    if (promptFormatted) return this.formatBlock(block);
+    return (block as any).value ?? null;
+  }
+
+  async deleteBlock(label: string, contextId?: string): Promise<void> {
+    const cid = this.getEffectiveContext(contextId);
+    const agent = await this.getAgentForContext(cid);
+    if (!agent) return;
+    const block = await this.getBlockByLabel(agent.id, label);
+    if (!block) return;
+    await this.lettaClient.agents.blocks.detach(agent.id, (block as any).id);
+    await this.lettaClient.blocks.delete((block as any).id);
+  }
+
+  async addMessagesToContext(contextId: string, messages: Record<string, any>[], skipVectorStorage: boolean = true): Promise<string> {
+    const agent = await this.getAgentForContext(contextId);
+    const agentId = agent ? agent.id : await this.ensureContext(contextId);
+    return await this.learnMessages(agentId, messages, skipVectorStorage);
+  }
+
+  async addMessagesHere(messages: Record<string, any>[], skipVectorStorage: boolean = true): Promise<string> {
+    const cid = this.getEffectiveContext();
+    return await this.addMessagesToContext(cid, messages, skipVectorStorage);
   }
 
   async initializeUserMemory(
@@ -176,17 +297,31 @@ export class Memory {
     return agentId;
   }
 
-  async addMessages(userId: string, messages: Record<string, any>[], skipVectorStorage: boolean = true): Promise<string> {
-    let agentId: string;
-    const agent = await this.getMatchingAgent([userId]);
-    
-    if (agent) {
-      agentId = agent.id;
-    } else {
-      agentId = await this.initializeUserMemory(userId);
+  async addMessages(messages: Record<string, any>[], skipVectorStorage?: boolean): Promise<string>;
+  async addMessages(userId: string, messages: Record<string, any>[], skipVectorStorage?: boolean): Promise<string>;
+  async addMessages(arg1: any, arg2?: any, arg3?: any): Promise<string> {
+    // Overloads:
+    // - addMessages(messages, skipVectorStorage?) when instance is bound to contextId
+    // - addMessages(userId, messages, skipVectorStorage?) for legacy user mode
+    if (typeof arg1 === 'string') {
+      const userId = arg1 as string;
+      const messages = arg2 as Record<string, any>[];
+      const skipVectorStorage = (typeof arg3 === 'boolean') ? arg3 : true;
+      let agentId: string;
+      const agent = await this.getMatchingAgent([userId]);
+      if (agent) {
+        agentId = agent.id;
+      } else {
+        agentId = await this.initializeUserMemory(userId);
+      }
+      return await this.learnMessages(agentId, messages, skipVectorStorage);
     }
 
-    return await this.learnMessages(agentId, messages, skipVectorStorage);
+    // Treat first arg as messages for the bound context
+    const messages = arg1 as Record<string, any>[];
+    const skipVectorStorage = (typeof arg2 === 'boolean') ? arg2 : true;
+    const cid = this.getEffectiveContext();
+    return await this.addMessagesToContext(cid, messages, skipVectorStorage);
   }
 
   async addFiles(files: Record<string, any>[]): Promise<never> {

@@ -26,6 +26,73 @@ Interests: Likes cats (2025-09-03)
 ```
 Memories can also be explicitly searched with semantic search to retrieve relevant historical messages to place back into context. 
 
+## Context Model (Generalized API)
+In addition to the user-specific helpers, the SDK supports a generalized "context" model:
+- Context: the unit we learn for (one context = one Letta agent). For example, `user:sarah`, `team:alpha`, or `project:123`.
+- Blocks: named pieces of context (e.g. `human`, `summary`, `preferences`) attached to the context's agent.
+- Messages: conversation turns the learner uses to update one or more blocks.
+
+You can bind a Memory instance to a context at construction time, or pass a context per call.
+
+Naming conventions
+- Agents: the context_id is embedded in the agent name (e.g., `subconscious_agent_ctx_<context_id>`). Ensure your `context_id` uses only characters allowed by Letta agent names. Recommended: letters, numbers, underscores, and dashes. Avoid characters like `:` or other punctuation.
+- Blocks and tags: follow your Letta deployment’s rules. Recommended: letters, numbers, underscores, and dashes.
+
+Python (instance-scoped):
+```python
+from ai_memory_sdk import Memory
+
+memory = Memory(context_id="user_sarah")
+
+# Create a new block in this context (no-op if it exists and reset=False)
+memory.initialize_memory(
+    label="preferences",
+    description="Known user preferences.",
+    value="Likes cats",
+)
+
+# Add conversation messages to the bound context (unified API)
+memory.add_messages([
+    {"role": "user", "content": "I love cats"}
+])
+
+# Retrieve a block (raw or prompt formatted)
+raw = memory.get_memory("preferences")
+formatted = memory.get_memory("preferences", prompt_formatted=True)
+```
+
+Python (explicit context):
+```python
+from ai_memory_sdk import Memory
+
+memory = Memory()
+memory.initialize_context("project_alpha", reset=True)
+memory.initialize_memory("spec", "Project spec", value="v1", context_id="project_alpha")
+run = memory.add_messages_for_context("project_alpha", [{"role": "user", "content": "Kickoff done"}])
+memory.wait_for_run(run)
+spec = memory.get_memory("spec", context_id="project_alpha")
+```
+
+TypeScript (instance-scoped):
+```ts
+import { Memory } from '@letta-ai/memory-sdk'
+
+const memory = new Memory({ contextId: 'user_sarah' })
+await memory.initializeMemory('preferences', 'Known user preferences.', 'Likes cats')
+// unified API when instance is bound to a context
+await memory.addMessages([{ role: 'user', content: 'I love cats' }])
+const formatted = await memory.getMemory('preferences', true)
+```
+
+TypeScript (explicit context):
+```ts
+const memory = new Memory()
+await memory.initializeContext('project_alpha', true)
+await memory.initializeMemory('spec', 'Project spec', 'v1', 10000, false, 'project_alpha')
+const run = await memory.addMessagesToContext('project_alpha', [{ role: 'user', content: 'Kickoff done' }])
+await memory.waitForRun(run)
+```
+
 ## Quickstart 
 1. Create a [Letta API key](https://app.letta.com/api-keys)
 2. Install: `pip install ai-memory-sdk`
@@ -146,10 +213,37 @@ user_memory = memory.get_user_memory("user_id", prompt_formatted=True)
 ```
 To get the raw value of the context block, you can pass `prompt_formatted=False`. 
 
+### Generalized Context API
+You can work with arbitrary contexts (one context = one Letta agent) and labeled blocks within them. You can bind a `Memory` instance to a context or pass a context per call.
+
+Constructor (instance-scoped context):
+```python
+from ai_memory_sdk import Memory
+memory = Memory(context_id="user:sarah")
+```
+
+Context methods (Python):
+- `initialize_context(context_id: str, reset: bool = False) -> str`
+- `list_blocks(context_id: Optional[str] = None) -> list`
+- `initialize_memory(label: str, description: str, value: str = "", char_limit: int = 10000, reset: bool = False, context_id: Optional[str] = None) -> str`
+- `get_memory(label: str, prompt_formatted: bool = False, context_id: Optional[str] = None) -> Optional[str]`
+- `delete_block(label: str, context_id: Optional[str] = None) -> None`
+- `add_messages_for_context(context_id: str, messages: list, skip_vector_storage: bool = True) -> str`
+- Unified: `add_messages(messages: list, skip_vector_storage: bool = True) -> str` (uses bound `context_id`)
+
+Example:
+```python
+memory = Memory(context_id="user:sarah")
+memory.initialize_memory("preferences", "Known user preferences.", "Likes cats")
+run = memory.add_messages([{ "role": "user", "content": "I love cats" }])
+memory.wait_for_run(run)
+print(memory.get_memory("preferences", prompt_formatted=True))
+```
+
 ### Searching messages 
 You can search messages with semantic search with: 
 ```python
-messages = memory.query("user_id", query="Favorite foods")
+messages = memory.search("user_id", query="Favorite foods")
 ```
 
 ### Retrieving the memory agent 
@@ -166,6 +260,12 @@ memory.delete_user("user_id")
 ```
 
 
+## Examples
+- Conversational memory with user helpers: `examples/chat.py`
+- Context-based demo (generalized API): `examples/context.py`
+- TypeScript context demo: `examples/context.ts`
+
+
 ## Roadmap
 - [x] Save messages as archival memories
 - [x] Query messages
@@ -173,4 +273,8 @@ memory.delete_user("user_id")
 - [ ] TypeScript support 
 - [ ] Learning from files
 - [ ] Add "sleep" (offline collective revisioning of all data)  
-
+You can also bind a context and call the unified method:
+```python
+memory = Memory(context_id="user_sarah")
+run = memory.add_messages([{"role": "user", "content": "hi"}])
+```

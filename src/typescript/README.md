@@ -59,6 +59,39 @@ const searchResults = await client.search('user_123', 'Bob');
 console.log('Search results:', searchResults);
 ```
 
+## Context Model (Generalized API)
+Beyond user-specific helpers, you can work with arbitrary contexts. One context maps to one Letta agent and can hold multiple labeled blocks.
+
+Instance-scoped context:
+```ts
+import { Memory } from '@letta-ai/memory-sdk'
+
+const memory = new Memory({ contextId: 'user_sarah' })
+
+// Create a block (no-op if it exists and reset=false)
+await memory.initializeMemory('preferences', 'Known user preferences.', 'Likes cats')
+
+// Add messages to the bound context (unified API)
+await memory.addMessages([
+  { role: 'user', content: 'I love cats' }
+])
+
+// Read a block
+const formatted = await memory.getMemory('preferences', true)
+```
+
+Explicit context per call:
+```ts
+const memory = new Memory()
+await memory.initializeContext('project_alpha', true)
+await memory.initializeMemory('spec', 'Project spec', 'v1', 10000, false, 'project_alpha')
+await memory.addMessagesToContext('project_alpha', [{ role: 'user', content: 'Kickoff done' }])
+```
+
+Naming conventions
+- Agents: contextId is included in the created agent name (`subconscious_agent_ctx_<contextId>`). Ensure your `contextId` contains only characters allowed by Letta agent names. Recommended: letters, numbers, underscores, and dashes. Avoid characters like `:`.
+- Blocks and tags: follow your Letta deployment’s constraints. Recommended: letters, numbers, underscores, and dashes.
+
 ## API Reference
 
 ### Constructor
@@ -71,6 +104,7 @@ Creates a new Memory instance.
 interface MemoryConfig {
   lettaApiKey?: string;  // Letta API key (or use LETTA_API_KEY env var)
   baseUrl?: string;      // Base URL for local Letta server
+  contextId?: string;    // Optional default context for instance-scoped operations
 }
 ```
 
@@ -92,6 +126,19 @@ const client = new Memory(); // Uses LETTA_API_KEY env var
 ```
 
 ### Methods
+
+#### Context Methods
+Work with arbitrary contexts and labeled blocks.
+
+- Unified addMessages: when a Memory instance has a `contextId`, you can call `addMessages(messages, skipVectorStorage?)` without passing a userId.
+
+- `initializeContext(contextId: string, reset?: boolean): Promise<string>`
+- `listBlocks(contextId?: string): Promise<any[]>`
+- `initializeMemory(label: string, description: string, value?: string, charLimit?: number, reset?: boolean, contextId?: string): Promise<string>`
+- `getMemory(label: string, promptFormatted?: boolean, contextId?: string): Promise<string | null>`
+- `deleteBlock(label: string, contextId?: string): Promise<void>`
+- `addMessagesToContext(contextId: string, messages: any[], skipVectorStorage?: boolean): Promise<string>`
+- `addMessagesHere(messages: any[], skipVectorStorage?: boolean): Promise<string>`
 
 #### `initializeUserMemory(userId: string, options?: InitOptions): Promise<string>`
 
@@ -119,8 +166,9 @@ const agentId = await client.initializeUserMemory('user_123', {
 ```
 
 #### `addMessages(userId: string, messages: Message[], skipVectorStorage?: boolean): Promise<string>`
+#### `addMessages(messages: Message[], skipVectorStorage?: boolean): Promise<string>`
 
-Add messages to a user's memory.
+Add messages either to a specific user (legacy) or to the instance-bound context (unified).
 
 ```typescript
 interface Message {
@@ -132,13 +180,12 @@ interface Message {
 ```
 
 **Parameters:**
-- `userId`: User identifier
-- `messages`: Array of messages to add
-- `skipVectorStorage`: Whether to skip adding messages to vector search (default: true)
+- Legacy form: `userId`, `messages`, `skipVectorStorage`
+- Unified form (requires `contextId` in Memory constructor): `messages`, `skipVectorStorage`
 
 **Returns:** Run ID for the processing task
 
-**Example:**
+**Examples:**
 ```typescript
 const runId = await client.addMessages('user_123', [
   {
@@ -150,6 +197,12 @@ const runId = await client.addMessages('user_123', [
     content: 'TypeScript is a great language! What do you like most about it?'
   }
 ], false); // Don't skip vector storage for searchability
+
+// Unified form with a bound context
+const bound = new Memory({ contextId: 'user:sarah' });
+const runId2 = await bound.addMessages([
+  { role: 'user', content: 'I love cats' }
+]);
 ```
 
 #### `getUserMemory(userId: string, promptFormatted?: boolean): Promise<string | null>`
@@ -289,6 +342,13 @@ npm run build
 node dist/examples/chat.js
 ```
 
+### Context Examples
+
+```bash
+npm run build
+node dist/examples/context.js
+```
+
 ### Managing Multiple Users
 
 ```typescript
@@ -344,6 +404,7 @@ npm run test:messages
 # Run specific test suites
 npm run test:memory
 npm run test:formatter
+npm run test:context
 
 # Watch mode for development
 npm run test:watch
