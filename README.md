@@ -245,6 +245,11 @@ You can search messages with semantic search with:
 ```python
 messages = memory.search("user_id", query="Favorite foods")
 ```
+By default this filters to SDK-authored user messages (tags=["ai-memory-sdk", "user"]). To customize:
+```python
+messages = memory.search("user_id", query="system prompts", tags=["assistant"])  # assistant passages
+messages = memory.search("user_id", query="any", tags=[])  # no tag filter
+```
 
 ### Retrieving the memory agent 
 Memories are formed by Letta agents using the sleeptime architecture. You can get the agent's ID with: 
@@ -278,3 +283,6 @@ You can also bind a context and call the unified method:
 memory = Memory(context_id="user_sarah")
 run = memory.add_messages([{"role": "user", "content": "hi"}])
 ```
+
+Implementation notes
+- Agents and passages created by this SDK include the tag `ai-memory-sdk` for discoverability and ops. The default search uses this tag in addition to role tags.

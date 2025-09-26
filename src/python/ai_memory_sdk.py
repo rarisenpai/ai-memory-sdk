@@ -380,9 +380,14 @@ class Memory:
             self.letta_client.agents.delete(agent.id)
             print(f"Deleted agent {agent.id} for user {user_id}")
 
-    def search(self, user_id: str, query: str):
-        """ Search for stored user messages """ 
+    def search(self, user_id: str, query: str, tags: Optional[List[str]] = None):
+        """Search for stored user messages via semantic search.
+
+        Default filters to SDK-authored user messages (tags=["ai-memory-sdk", "user"]).
+        Pass a custom list of tags to adjust filtering (e.g., ["assistant"], or []).
+        """
         agent = self._get_matching_agent(tags=[user_id])
         if agent:
-            response = self.letta_client.agents.passages.search(agent_id=agent.id, query=query, tags=["user"])
+            search_tags = tags if tags is not None else ["ai-memory-sdk", "user"]
+            response = self.letta_client.agents.passages.search(agent_id=agent.id, query=query, tags=search_tags)
             return [result.content for result in response.results]

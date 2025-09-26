@@ -92,6 +92,9 @@ Naming conventions
 - Agents: contextId is included in the created agent name (`subconscious_agent_ctx_<contextId>`). Ensure your `contextId` contains only characters allowed by Letta agent names. Recommended: letters, numbers, underscores, and dashes. Avoid characters like `:`.
 - Blocks and tags: follow your Letta deployment’s constraints. Recommended: letters, numbers, underscores, and dashes.
 
+SDK tagging
+- Agents and passages created by this SDK are tagged with `ai-memory-sdk` for discoverability. The default `search` includes this tag.
+
 ## API Reference
 
 ### Constructor
@@ -245,19 +248,21 @@ const formattedSummary = await client.getSummary('user_123', true);
 // Returns: <conversation_summary>User discussed TypeScript programming...</conversation_summary>
 ```
 
-#### `search(userId: string, query: string): Promise<string[]>`
+#### `search(userId: string, query: string, tags?: string[]): Promise<string[]>`
 
 Search a user's message history.
 
 **Parameters:**
 - `userId`: User identifier
 - `query`: Search query
+- `tags`: Optional tag filter (defaults to `['ai-memory-sdk', 'user']`)
 
 **Returns:** Array of matching message contents
 
 **Example:**
 ```typescript
 const results = await client.search('user_123', 'programming');
+const assistantOnly = await client.search('user_123', 'explain', ['assistant']);
 console.log('Found messages:', results);
 ```
 

@@ -371,12 +371,12 @@ export class Memory {
     }
   }
 
-  async search(userId: string, query: string): Promise<string[]> {
+  async search(userId: string, query: string, tags?: string[]): Promise<string[]> {
     const agent = await this.getMatchingAgent([userId]);
     if (agent) {
       const response = await this.lettaClient.agents.passages.search(agent.id, {
         query,
-        tags: ['user'],
+        tags: tags ?? ['ai-memory-sdk', 'user'],
       });
       return response.results.map(result => result.content);
     }
