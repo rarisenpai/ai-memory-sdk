@@ -269,6 +269,7 @@ memory.delete_user("user_id")
 - Conversational memory with user helpers: `examples/chat.py`
 - Context-based demo (generalized API): `examples/context.py`
 - TypeScript context demo: `examples/context.ts`
+- Full tutorial: `docs/tutorial.md`
 
 
 ## Roadmap
