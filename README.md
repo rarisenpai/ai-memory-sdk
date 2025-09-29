@@ -1,12 +1,18 @@
-# AI Memory SDK 
-Subconscious agents for LLM memory. This SDK gives you background “subconscious agents” that asynchronously learn about subjects and populate flexible blocks of memory you can plug into system prompts.
+# AI Memory SDK
 
-- Subconscious agents: long‑running agents that process conversation history asynchronously.
-- Subjects: what memory is “about” (e.g., user_sarah, project_alpha, team_support).
-- Blocks: named memory sections under a subject (e.g., human, summary, policies, history, study_guide). Any label and description are permitted.
-- Messages: the conversation turns you feed the agent; it extracts and updates blocks accordingly.
+The AI Memory SDK is a lightweight wrapper around [Letta](https://letta.com), a platform for serving stateful agents. The memory SDK simplifies the interface to provide a general-purpose memory layer, similar to mem0, Graphiti, and others.
+
+The AI Memory SDK creates a "subconscious agent" (a standard Letta agent) responsible for managing a set of memory blocks. Subconscious agents begin asynchronously processing information when they receive messages, and will attempt to update all memory blocks. Subconscious agents are designed to be lightweight and efficient, allowing for quick and seamless integration into existing systems.
+
+Memory blocks are scoped to "subjects", which are arbitrary collections of blocks.
+
+- **Subjects**: what memory is “about” (e.g., a particular user, project_alpha, team_support). These are just Letta agents under the hood.
+- **Blocks**: named memory sections under a subject (e.g., human, summary, policies, history, study_guide, preferences). Any label and description are permitted. Read more on memory blocks [here](https://docs.letta.com/guides/agents/memory-blocks).
+- **Messages**: the conversation turns you feed the agent. Adding messages to a `Memory` instance will kick off the agent's processing.
 
 This enables user profiles and summaries, and broader use cases like policy digests, running histories, study guides, briefs — any domain‑specific memory you define.
+
+See Letta's YouTube channel for more information on how to design memory architecture. [This video](https://youtu.be/o4boci1xSbM) provides a general overview.
 
 Quick mental model:
 ```
@@ -25,21 +31,25 @@ Quick mental model:
 |  * ...                                 |
 +========================================+
 ```
+
 Memories can also be explicitly searched with semantic search to retrieve relevant historical messages and place them back into context.
 
 ## Subject Model (Generalized API)
+
 In addition to the user-specific helpers, the SDK supports a generalized "subject" model:
-- Subject: the unit we learn for (one subject = one Letta agent). For example, `user_sarah`, `team_alpha`, or `project_123`.
-- Blocks: named pieces of memory (e.g. `human`, `summary`, `preferences`) attached to the subject's agent.
-- Messages: conversation turns the learner uses to update one or more blocks.
+- **Subject**: the unit we learn for (one subject = one Letta agent). For example, `user_sarah`, `team_alpha`, or `project_123`.
+- **Blocks**: named pieces of memory (e.g. `human`, `summary`, `preferences`) attached to the subject's agent.
+- **Messages**: conversation turns the learner uses to update one or more blocks.
 
 You can bind a Memory instance to a subject at construction time, or pass a subject per call.
 
-Naming conventions
-- Agents: the subject_id is embedded in the agent name (e.g., `subconscious_agent_subject_<subject_id>`). Ensure your `subject_id` uses only characters allowed by Letta agent names. Recommended: letters, numbers, underscores, and dashes. Avoid characters like `:` or other punctuation.
-- Blocks and tags: follow your Letta deployment’s rules. Recommended: letters, numbers, underscores, and dashes.
+### Naming conventions
 
-Python (instance-scoped):
+- **Agents**: the subject_id is embedded in the agent name (e.g., `subconscious_agent_subject_<subject_id>`). Ensure your `subject_id` uses only characters allowed by Letta agent names. Recommended: letters, numbers, underscores, and dashes. Avoid characters like `:` or other punctuation.
+- **Blocks and tags**: follow your Letta deployment’s rules. Recommended: letters, numbers, underscores, and dashes.
+
+
+**Python (instance-scoped)**:
 ```python
 from ai_memory_sdk import Memory
 
@@ -62,7 +72,8 @@ raw = memory.get_memory("preferences")
 formatted = memory.get_memory("preferences", prompt_formatted=True)
 ```
 
-Python (explicit subject):
+
+**Python (explicit subject)**:
 ```python
 from ai_memory_sdk import Memory
 
@@ -74,7 +85,8 @@ memory.wait_for_run(run)
 spec = memory.get_memory("spec", subject_id="project_alpha")
 ```
 
-TypeScript (instance-scoped):
+
+**TypeScript (instance-scoped)**:
 ```ts
 import { Memory } from '@letta-ai/memory-sdk'
 
@@ -85,7 +97,8 @@ await memory.addMessages([{ role: 'user', content: 'I love cats' }])
 const formatted = await memory.getMemory('preferences', true)
 ```
 
-TypeScript (explicit subject):
+
+**TypeScript (explicit subject)**:
 ```ts
 const memory = new Memory()
 await memory.initializeSubject('project_alpha', true)
@@ -94,7 +107,8 @@ const run = await memory.addMessagesToSubject('project_alpha', [{ role: 'user', 
 await memory.waitForRun(run)
 ```
 
-## Quickstart 
+## Quickstart
+
 1. Create a [Letta API key](https://app.letta.com/api-keys)
 2. Install: `pip install ai-memory-sdk`
 
@@ -179,6 +193,7 @@ if __name__ == "__main__":
 You can also search memories (semantic search) with `memory.search(user_id, query)` to retrieve relevant historical messages.
 
 ## SDK Reference
+
 You can initialize the memory SDK with:
 ```python
 from ai_memory_sdk import Memory
@@ -186,31 +201,35 @@ from ai_memory_sdk import Memory
 memory = Memory(api_key="LETTA_API_KEY")
 ```
 
-### Adding memories 
-Save messages by adding them to memory: 
+### Adding memories
+
+Save messages by adding them to memory:
 ```python
 run = memory.add_messages("user_id", [{"role": "user", "content": "hi"}])
 ```
-The memory agent will process the messages asynchronously, tracked by the `run`. 
+The memory agent will process the messages asynchronously, tracked by the `run`.
 > [!WARNING]
-> Each each call to `add_messages(...)` will invoke the memory agent. To reduce costs, you may want to send messages in batches (recommended 5-10) or only when messages are evicted from context. 
+> Each each call to `add_messages(...)` will invoke the memory agent. To reduce costs, you may want to send messages in batches (recommended 5-10) or only when messages are evicted from context.
 
 ### Waiting for learning to complete
+
 Messages are processed asynchronously, so to ensure all memory updates are reflected you should wait for the agent learning to complete.
 ```python
 memory.wait_for_run(run)
 ```
-This will block until the memory agent has completed processing. 
+This will block until the memory agent has completed processing.
 
 ### Getting memories for a user
-You can get the context blocks for the summary and/or user memory with: 
+
+You can get the context blocks for the summary and/or user memory with:
 ```python
 summary = memory.get_summary("user_id", prompt_formatted=True)
 user_memory = memory.get_user_memory("user_id", prompt_formatted=True)
 ```
-To get the raw value of the context block, you can pass `prompt_formatted=False`. 
+To get the raw value of the context block, you can pass `prompt_formatted=False`.
 
 ### Generalized Subject API
+
 You can work with arbitrary subjects (one subject = one Letta agent) and labeled blocks within them. You can bind a `Memory` instance to a subject or pass a subject per call.
 
 Constructor (instance-scoped subject):
@@ -219,7 +238,7 @@ from ai_memory_sdk import Memory
 memory = Memory(subject_id="user_sarah")
 ```
 
-Subject methods (Python):
+**Subject methods (Python)**:
 - `initialize_subject(subject_id: str, reset: bool = False) -> str`
 - `list_blocks(subject_id: Optional[str] = None) -> list`
 - `initialize_memory(label: str, description: str, value: str = "", char_limit: int = 10000, reset: bool = False, subject_id: Optional[str] = None) -> str`
@@ -237,32 +256,37 @@ memory.wait_for_run(run)
 print(memory.get_memory("preferences", prompt_formatted=True))
 ```
 
-### Searching messages 
-You can search messages with semantic search with: 
+### Searching messages
+
+You can search messages with semantic search with:
 ```python
 messages = memory.search("user_id", query="Favorite foods")
 ```
+
 By default this filters to SDK-authored user messages (tags=["ai-memory-sdk", "user"]). To customize:
 ```python
 messages = memory.search("user_id", query="system prompts", tags=["assistant"])  # assistant passages
 messages = memory.search("user_id", query="any", tags=[])  # no tag filter
 ```
 
-### Retrieving the memory agent 
-Memories are formed by Letta agents using the sleeptime architecture. You can get the agent's ID with: 
+### Retrieving the memory agent
+
+Memories are formed by Letta agents using the sleeptime architecture. You can get the agent's ID with:
 ```python
 agent_id = memory.get_memory_agent_id("user_id")
 ```
-The agent can be viewed at `https://app.letta.com/agents/<AGENT_ID>`. 
+The agent can be viewed at `https://app.letta.com/agents/<AGENT_ID>`.
 
-### Deleting user memories 
-All memories and data associated with a user can be deleted with: 
+### Deleting user memories
+
+All memories and data associated with a user can be deleted with:
 ```python
 memory.delete_user("user_id")
 ```
 
 
 ## Examples
+
 - Conversational memory with user helpers: `examples/chat.py`
 - Subject-based demo (generalized API): `examples/subject.py`
 - TypeScript subject demo: `examples/subject.ts`
@@ -270,17 +294,14 @@ memory.delete_user("user_id")
 
 
 ## Roadmap
+
 - [x] Save messages as archival memories
 - [x] Query messages
 - [ ] Query messages by time
-- [ ] TypeScript support 
+- [x] TypeScript support
 - [ ] Learning from files
-- [ ] Add "sleep" (offline collective revisioning of all data)  
-You can also bind a subject and call the unified method:
-```python
-memory = Memory(subject_id="user_sarah")
-run = memory.add_messages([{"role": "user", "content": "hi"}])
-```
+- [ ] Add "sleep" (offline collective revisioning of all data)
 
-Implementation notes
+### Implementation notes
+
 - Agents and passages created by this SDK include the tag `ai-memory-sdk` for discoverability and ops. The default search uses this tag in addition to role tags.
