@@ -1,7 +1,6 @@
 from typing import List, Dict, Any, Optional
 import time
 import os
-import asyncio
 from letta_client import Letta
 from prompt_formatter import format_messages
 from schemas import MessageCreate

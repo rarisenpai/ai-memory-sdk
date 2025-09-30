@@ -287,8 +287,11 @@ memory.delete_user("user_id")
 
 - Conversational memory with user helpers: `examples/chat.py`
 - Subject-based demo (generalized API): `examples/subject.py`
+- Archival memory and semantic search: `examples/archival_search.py`
+- Multi-block customer support bot: `examples/customer_support.py`
 - TypeScript subject demo: `examples/subject.ts`
 - Full tutorial: `docs/tutorial.md`
+- Complete examples guide: `examples/README.md`
 
 
 ## Roadmap
