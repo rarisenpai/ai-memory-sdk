@@ -1,6 +1,8 @@
-# Letta Memory TypeScript SDK
+# AI Memory SDK (TypeScript)
 
-A TypeScript SDK for using Letta subagents for pluggable memory management. This SDK allows you to easily integrate persistent conversational memory into your applications. This is the TypeScript equivalent of the Python implementation.
+A lightweight wrapper around [Letta](https://letta.com)'s advanced memory management capabilities. Letta is a platform for building stateful AI agents that truly remember, learn, and evolve. The memory SDK exposes Letta's sophisticated memory architecture through a simplified TypeScript interface for general-purpose use cases like user profiles, conversation summaries, and domain-specific knowledge bases.
+
+Under the hood, the SDK creates Letta agents configured to manage memory blocks. When you send messages, the agent asynchronously processes them and updates its memory blocks. This architecture leverages Letta's core strengths in persistent memory and stateful learning while providing a streamlined API for common memory patterns.
 
 ## Installation
 
@@ -60,7 +62,7 @@ console.log('Search results:', searchResults);
 ```
 
 ## Subject Model (Generalized API)
-Beyond user-specific helpers, you can work with arbitrary subjects. One subject maps to one Letta agent and can hold multiple labeled blocks.
+Beyond user-specific helpers, you can work with arbitrary subjects. Each subject is backed by a Letta agent with its own memory state and can hold multiple labeled memory blocks in its core memory.
 
 Instance-scoped subject:
 ```ts
@@ -93,7 +95,7 @@ Naming conventions
 - Blocks and tags: follow your Letta deployment’s constraints. Recommended: letters, numbers, underscores, and dashes.
 
 SDK tagging
-- Agents and passages created by this SDK are tagged with `ai-memory-sdk` for discoverability. The default `search` includes this tag.
+- Letta agents and passages (archival memory) created by this SDK are tagged with `ai-memory-sdk` for discoverability. The default `search` includes this tag.
 
 ## API Reference
 
@@ -145,7 +147,7 @@ Work with arbitrary subjects and labeled blocks.
 
 #### `initializeUserMemory(userId: string, options?: InitOptions): Promise<string>`
 
-Initialize memory for a new user.
+Initialize memory for a new user by creating a Letta agent with default blocks (human, summary).
 
 ```typescript
 interface InitOptions {
@@ -158,7 +160,7 @@ interface InitOptions {
 }
 ```
 
-**Returns:** Agent ID for the user's memory
+**Returns:** Letta agent ID for the user's memory
 
 **Example:**
 ```typescript
@@ -171,7 +173,7 @@ const agentId = await client.initializeUserMemory('user_123', {
 #### `addMessages(userId: string, messages: Message[], skipVectorStorage?: boolean): Promise<string>`
 #### `addMessages(messages: Message[], skipVectorStorage?: boolean): Promise<string>`
 
-Add messages either to a specific user (legacy) or to the instance-bound context (unified).
+Send messages to a Letta agent to update memory blocks. Works either with a specific user (legacy) or instance-bound subject (unified).
 
 ```typescript
 interface Message {
@@ -210,13 +212,13 @@ const runId2 = await bound.addMessages([
 
 #### `getUserMemory(userId: string, promptFormatted?: boolean): Promise<string | null>`
 
-Retrieve a user's memory.
+Retrieve a user's memory block (human block from core memory).
 
 **Parameters:**
-- `userId`: User identifier  
+- `userId`: User identifier
 - `promptFormatted`: Whether to return memory in XML format for prompts (default: false)
 
-**Returns:** User memory string or null if user doesn't exist
+**Returns:** User memory block value or null if user doesn't exist
 
 **Example:**
 ```typescript
@@ -250,14 +252,14 @@ const formattedSummary = await client.getSummary('user_123', true);
 
 #### `search(userId: string, query: string, tags?: string[]): Promise<string[]>`
 
-Search a user's message history.
+Search a user's archival memory (passages) with semantic search.
 
 **Parameters:**
 - `userId`: User identifier
 - `query`: Search query
 - `tags`: Optional tag filter (defaults to `['ai-memory-sdk', 'user']`)
 
-**Returns:** Array of matching message contents
+**Returns:** Array of matching passage contents from archival memory
 
 **Example:**
 ```typescript

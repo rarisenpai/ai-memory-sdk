@@ -61,7 +61,7 @@ class Memory:
 
 
     def _create_context_block(self, agent_id: str, label: str, description: str, char_limit: int = 10000, value: str = ""):
-        """ Create a subject block """ 
+        """ Create a memory block for a subject """
         block = self.letta_client.blocks.create(
             label=label,
             description=description,
@@ -91,7 +91,7 @@ class Memory:
             return agent.id
         # Create a new agent for this subject with both tags for compatibility
         agent_id = self._create_sleeptime_agent(name=f"subconscious_agent_subject_{subject_id}", tags=self._subject_tags(subject_id))
-        # Attach a single archival memory (workaround / anchor)
+        # Create initial passage in archival memory
         self.letta_client.agents.passages.create(
             agent_id=agent_id,
             text=f"Initialized memory for subject {subject_id}",
@@ -166,9 +166,20 @@ class Memory:
             raise ValueError(f"Run {run_id} not found")
         return run.status
 
-    def wait_for_run(self, run_id: str):
-        """ Wait for a run to complete """ 
+    def wait_for_run(self, run_id: str, timeout: int = 300):
+        """Wait for a run to complete.
+
+        Args:
+            run_id: The run ID to wait for
+            timeout: Maximum time to wait in seconds (default: 300)
+
+        Raises:
+            TimeoutError: If the run doesn't complete within the timeout period
+        """
+        start_time = time.time()
         while self._get_run_status(run_id) != "completed":
+            if time.time() - start_time > timeout:
+                raise TimeoutError(f"Run {run_id} did not complete within {timeout} seconds")
             time.sleep(1)
 
     # ===== General Subject API =====
@@ -279,33 +290,46 @@ class Memory:
         sid = self._get_effective_subject(None)
         return self.add_messages_for_subject(sid, messages, skip_vector_storage=skip_vector_storage)
 
-    def initialize_user_memory(self, 
-        user_id: str, 
+    def initialize_user_memory(self,
+        user_id: str,
         user_context_block_prompt: str = "Details about the human user you are speaking to.",
         user_context_block_char_limit: int = 10000,
         user_context_block_value: str = "",
         summary_block_prompt: str = "A short (1-2 sentences) running summary of the conversation.",
         summary_block_char_limit: int = 1000,
         reset: bool = False # whether to reset existing memory
-    ): 
-        """ Initialize a user's memory """ 
+    ):
+        """Initialize a user's memory with default blocks (human, summary).
 
-        # check if agent aleady exists
+        Args:
+            user_id: Unique identifier for the user
+            user_context_block_prompt: Description for the human block
+            user_context_block_char_limit: Character limit for the human block
+            user_context_block_value: Initial value for the human block
+            summary_block_prompt: Description for the summary block
+            summary_block_char_limit: Character limit for the summary block
+            reset: If True, delete and recreate existing agent
+
+        Returns:
+            The Letta agent ID for this user
+        """
+
+        # check if agent already exists
         agent = self._get_matching_agent(tags=[user_id])
         if agent:
             if reset:
                 self._delete_agent(agent.id)
             else:
-                raise ValueError(f"Agent {agent.id} already exists for user {user_id}. Cannot re-initialize memory unless deleted.")
-        
-        # create the agent 
+                raise ValueError(f"Agent {agent.id} already exists for user {user_id}. Cannot re-initialize memory unless reset=True.")
+
+        # create the Letta agent
         agent_id = self._create_sleeptime_agent(name=f"subconscious_agent_user_{user_id}", tags=[user_id])
-        
-        # create context blocks
+
+        # create memory blocks
         self._create_context_block(agent_id=agent_id, label="human", description=user_context_block_prompt, char_limit=user_context_block_char_limit, value=user_context_block_value)
         self._create_context_block(agent_id=agent_id, label="summary", description=summary_block_prompt, char_limit=summary_block_char_limit, value="")
 
-        # attach a single archival memory (workaround)
+        # create initial passage in archival memory
         self.letta_client.agents.passages.create(
             agent_id=agent_id,
             text=f"Initialized memory for user {user_id}",
