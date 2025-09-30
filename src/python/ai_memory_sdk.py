@@ -1,8 +1,8 @@
 from typing import List, Dict, Any, Optional
-import time 
+import time
 import os
 import asyncio
-from letta_client import Letta, AsyncLetta
+from letta_client import Letta
 from prompt_formatter import format_messages
 from schemas import MessageCreate
 
@@ -14,14 +14,13 @@ class Memory:
     "summary", "preferences") can be attached to that subject.
     """
 
-    def __init__(self, 
+    def __init__(self,
         api_key: Optional[str] = None,
         subject_id: Optional[str] = None,
     ):
         if api_key is None:
             api_key = os.getenv("LETTA_API_KEY")
         self.letta_client = Letta(token=api_key)
-        self.async_letta_client = AsyncLetta(token=api_key)
         # Optional default subject for instance-scoped operations
         self.subject_id = subject_id
         self._default_tag = "ai-memory-sdk"
@@ -127,30 +126,36 @@ class Memory:
             bid = block_obj.get("id")
         return bid
 
-    async def _learn_messages(
-        self, 
-        agent_id: str, 
-        messages: List[Dict[str, Any]], 
+    def _learn_messages_sync(
+        self,
+        agent_id: str,
+        messages: List[Dict[str, Any]],
         skip_vector_storage: bool,
-    ):
-        """ Learn messages asynchronously """ 
+    ) -> str:
+        """Learn messages and optionally store in archival memory.
+
+        Args:
+            agent_id: The Letta agent ID
+            messages: List of messages to process
+            skip_vector_storage: If False, also store messages in archival memory
+
+        Returns:
+            The run ID for tracking processing
+        """
         formatted_messages = format_messages([MessageCreate(**msg) for msg in messages])
         letta_run = self.letta_client.agents.messages.create_async(
             agent_id=agent_id,
             messages=formatted_messages
         )
 
-        # insert into archival in parallel
+        # insert into archival memory sequentially
         if not skip_vector_storage:
-            tasks = [
-                self.async_letta_client.agents.passages.create(
+            for message in messages:
+                self.letta_client.agents.passages.create(
                     agent_id=agent_id,
                     text=message["content"],
                     tags=[message["role"], self._default_tag],
                 )
-                for message in messages
-            ]
-            await asyncio.gather(*tasks)
 
         return letta_run.id
 
@@ -283,7 +288,7 @@ class Memory:
             agent_id = agent.id
         else:
             agent_id = self._ensure_subject(subject_id)
-        return asyncio.run(self._learn_messages(agent_id, messages, skip_vector_storage=skip_vector_storage))
+        return self._learn_messages_sync(agent_id, messages, skip_vector_storage=skip_vector_storage)
 
     def add_messages_here(self, messages: List[Dict[str, Any]], skip_vector_storage: bool = True) -> str:
         """Add messages using the instance's bound subject_id."""
@@ -355,7 +360,7 @@ class Memory:
                 agent_id = agent.id
             else:
                 agent_id = self.initialize_user_memory(user_id)
-            return asyncio.run(self._learn_messages(agent_id, messages, skip_vector_storage=skip_vector_storage))
+            return self._learn_messages_sync(agent_id, messages, skip_vector_storage=skip_vector_storage)
 
         # Otherwise, treat first arg as the messages list and use the bound subject
         inferred_messages = user_or_messages
