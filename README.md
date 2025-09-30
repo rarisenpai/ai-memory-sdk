@@ -1,25 +1,25 @@
 # AI Memory SDK
 
-The AI Memory SDK is a lightweight wrapper around [Letta](https://letta.com), a platform for serving stateful agents. The memory SDK simplifies the interface to provide a general-purpose memory layer, similar to mem0, Graphiti, and others.
+The AI Memory SDK is a lightweight wrapper around [Letta](https://letta.com)'s advanced memory management capabilities. Letta is a platform for building stateful AI agents that truly remember, learn, and evolve. The memory SDK exposes Letta's sophisticated memory architecture through a simplified interface for general-purpose use cases like user profiles, conversation summaries, and domain-specific knowledge bases.
 
-The AI Memory SDK creates a "subconscious agent" (a standard Letta agent) responsible for managing a set of memory blocks. Subconscious agents begin asynchronously processing information when they receive messages, and will attempt to update all memory blocks. Subconscious agents are designed to be lightweight and efficient, allowing for quick and seamless integration into existing systems.
+Under the hood, the SDK creates a "subconscious agent"—a Letta agent configured to manage memory blocks. When you send messages, the agent asynchronously processes them and updates its memory blocks. This architecture leverages Letta's core strengths in persistent memory and stateful learning while providing a streamlined API for common memory patterns.
 
-Memory blocks are scoped to "subjects", which are arbitrary collections of blocks.
+The SDK organizes memory around three concepts:
 
-- **Subjects**: what memory is “about” (e.g., a particular user, project_alpha, team_support). These are just Letta agents under the hood.
-- **Blocks**: named memory sections under a subject (e.g., human, summary, policies, history, study_guide, preferences). Any label and description are permitted. Read more on memory blocks [here](https://docs.letta.com/guides/agents/memory-blocks).
-- **Messages**: the conversation turns you feed the agent. Adding messages to a `Memory` instance will kick off the agent's processing.
+- **Subjects**: what memory is "about" (e.g., `user_sarah`, `project_alpha`, `team_support`). Each subject is backed by a Letta agent with its own memory state.
+- **Blocks**: named memory sections within a subject (e.g., `human`, `summary`, `policies`, `history`, `preferences`). These correspond to Letta's [memory blocks](https://docs.letta.com/guides/agents/memory-blocks)—customizable, labeled sections that persist in the agent's core memory.
+- **Messages**: conversation turns you send to update memory. When you add messages, the Letta agent processes them and updates relevant blocks asynchronously.
 
-This enables user profiles and summaries, and broader use cases like policy digests, running histories, study guides, briefs — any domain‑specific memory you define.
+This enables user profiles and conversation summaries, plus broader use cases like policy digests, running histories, study guides, or any domain‑specific memory you define.
 
 See Letta's YouTube channel for more information on how to design memory architecture. [This video](https://youtu.be/o4boci1xSbM) provides a general overview.
 
-Quick mental model:
+Quick mental model—blocks live in the agent's context window (core memory), updated automatically as messages flow through:
 ```
 +========================================+
 |         SYSTEM PROMPT                  |
 +========================================+
-|   LEARNED BLOCKS (SUBJECT)             | <- subconscious agent updates over time
+|   CORE MEMORY (BLOCKS)                 | <- Letta agent updates over time
 |   - <human> ... </human>               |
 |   - <summary> ... </summary>           |
 |   - <policies> ... </policies>         |
@@ -32,7 +32,7 @@ Quick mental model:
 +========================================+
 ```
 
-Memories can also be explicitly searched with semantic search to retrieve relevant historical messages and place them back into context.
+Messages can optionally be stored in archival memory (Letta's external long-term storage) by setting `skip_vector_storage=False`, enabling semantic search to retrieve relevant passages and inject them back into context.
 
 ## Subject Model (Generalized API)
 
@@ -113,7 +113,7 @@ await memory.waitForRun(run)
 2. Install: `pip install ai-memory-sdk`
 
 ### Usage: Generic Memory Blocks
-Save conversation histories and let the subconscious agent update any blocks you define (human, summary, policies, history, study_guide, ...). Retrieve learned blocks and plug them into your system prompts.
+Leverage Letta's memory block system to maintain persistent, evolving memory. Define blocks (human, summary, policies, history, study_guide, ...) with custom labels and descriptions. As you send messages, the Letta agent updates relevant blocks based on their descriptions. Retrieve blocks and inject them into your system prompts for context-aware interactions.
 
 **Example:** Create a basic OpenAI `gpt-4o-mini` chat agent with subject‑scoped memory
 
@@ -121,11 +121,10 @@ Save conversation histories and let the subconscious agent update any blocks you
 from openai import OpenAI
 from ai_memory_sdk import Memory
 
-# Memory is a lightweight client around Letta, and will handle storing information
-# about user conversations.
+# Memory is a lightweight wrapper around Letta's memory management.
+# It creates a Letta agent to handle persistent memory for your conversations.
 #
-# Assumes the existence of the LETTA_API_KEY environment variable, but you can
-# set this manually with Memory(api_key="your_api_key")
+# Assumes LETTA_API_KEY environment variable, or pass api_key="your_api_key"
 memory = Memory()
 
 # Set up your OpenAI client like you normally would.
@@ -169,9 +168,8 @@ def chat_with_memories(message: str, user_id: str = "default_user") -> str:
     # Extract the assistant's message from the API response
     assistant_response = response.choices[0].message.content
 
-    # Create new memories from the conversation --
-    # this will update subject blocks and persist messages
-    print("Creating new memories...")
+    # Send the conversation to the Letta agent to update memory blocks
+    print("Updating memory...")
     messages.append({"role": "assistant", "content": assistant_response})
     memory.add_messages(user_id, messages)
 
@@ -190,7 +188,7 @@ if __name__ == "__main__":
     main()
 
 ```
-You can also search memories (semantic search) with `memory.search(user_id, query)` to retrieve relevant historical messages.
+You can also search archival memory with `memory.search(user_id, query)` to retrieve relevant historical messages (requires `skip_vector_storage=False` when adding messages).
 
 ## SDK Reference
 
@@ -203,30 +201,30 @@ memory = Memory(api_key="LETTA_API_KEY")
 
 ### Adding memories
 
-Save messages by adding them to memory:
+Send messages to the Letta agent to update memory blocks:
 ```python
 run = memory.add_messages("user_id", [{"role": "user", "content": "hi"}])
 ```
-The memory agent will process the messages asynchronously, tracked by the `run`.
+The Letta agent processes messages asynchronously and updates relevant blocks based on their descriptions. The `run` object tracks this processing.
 > [!WARNING]
-> Each each call to `add_messages(...)` will invoke the memory agent. To reduce costs, you may want to send messages in batches (recommended 5-10) or only when messages are evicted from context.
+> Each call to `add_messages(...)` invokes the Letta agent. To reduce costs, send messages in batches (recommended 5-10) or only when messages are evicted from context.
 
 ### Waiting for learning to complete
 
-Messages are processed asynchronously, so to ensure all memory updates are reflected you should wait for the agent learning to complete.
+Messages are processed asynchronously, so to ensure all memory updates are reflected you should wait for the Letta agent to complete processing.
 ```python
 memory.wait_for_run(run)
 ```
-This will block until the memory agent has completed processing.
+This blocks until the Letta agent finishes updating memory blocks.
 
 ### Getting memories for a user
 
-You can get the context blocks for the summary and/or user memory with:
+Retrieve memory blocks (core memory) for the summary and/or user memory:
 ```python
 summary = memory.get_summary("user_id", prompt_formatted=True)
 user_memory = memory.get_user_memory("user_id", prompt_formatted=True)
 ```
-To get the raw value of the context block, you can pass `prompt_formatted=False`.
+To get the raw block value instead of formatted XML, pass `prompt_formatted=False`.
 
 ### Generalized Subject API
 
@@ -258,12 +256,12 @@ print(memory.get_memory("preferences", prompt_formatted=True))
 
 ### Searching messages
 
-You can search messages with semantic search with:
+Search archival memory (passages) with semantic search:
 ```python
 messages = memory.search("user_id", query="Favorite foods")
 ```
 
-By default this filters to SDK-authored user messages (tags=["ai-memory-sdk", "user"]). To customize:
+This searches Letta's archival memory (requires `skip_vector_storage=False` when adding messages). By default it filters to SDK-authored user messages (tags=["ai-memory-sdk", "user"]). To customize:
 ```python
 messages = memory.search("user_id", query="system prompts", tags=["assistant"])  # assistant passages
 messages = memory.search("user_id", query="any", tags=[])  # no tag filter
@@ -271,15 +269,15 @@ messages = memory.search("user_id", query="any", tags=[])  # no tag filter
 
 ### Retrieving the memory agent
 
-Memories are formed by Letta agents using the sleeptime architecture. You can get the agent's ID with:
+Each subject is backed by a Letta agent (using the sleeptime architecture). Get the agent's ID with:
 ```python
 agent_id = memory.get_memory_agent_id("user_id")
 ```
-The agent can be viewed at `https://app.letta.com/agents/<AGENT_ID>`.
+View the agent at `https://app.letta.com/agents/<AGENT_ID>` to inspect its memory blocks and message history.
 
 ### Deleting user memories
 
-All memories and data associated with a user can be deleted with:
+Delete the Letta agent and all associated data (blocks, passages) for a user:
 ```python
 memory.delete_user("user_id")
 ```
