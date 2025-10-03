@@ -411,11 +411,11 @@ class Memory:
     def search(self, user_id: str, query: str, tags: Optional[List[str]] = None):
         """Search for stored user messages via semantic search.
 
-        Default filters to SDK-authored user messages (tags=["ai-memory-sdk", "user"]).
-        Pass a custom list of tags to adjust filtering (e.g., ["assistant"], or []).
+        Default filters to user messages (tags=["user"]).
+        Pass a custom list of tags to adjust filtering (e.g., ["assistant"], or [] for all).
         """
         agent = self._get_matching_agent(tags=[user_id])
         if agent:
-            search_tags = tags if tags is not None else ["ai-memory-sdk", "user"]
+            search_tags = tags if tags is not None else ["user"]
             response = self.letta_client.agents.passages.search(agent_id=agent.id, query=query, tags=search_tags)
             return [result.content for result in response.results]
