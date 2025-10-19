@@ -135,75 +135,110 @@ class MemoryService:
             }
     
     def initialize_with_blocks(
-        self,
-        user_id: Optional[str] = None,
-        blocks: Optional[List[Dict[str, Any]]] = None,
-        reset: bool = False
-    ) -> Dict[str, Any]:
-        """
-        Initialize memory with custom blocks
-        """
-        try:
-            effective_user_id = self._get_user_id(user_id)
-            
-            # Check if agent exists
-            agent = self.memory._get_matching_agent(tags=[effective_user_id])
-            
-            if agent:
-                if reset:
-                    self.memory._delete_agent(agent.id)
-                    agent = None
-                else:
-                    return {
-                        "success": False,
-                        "error": f"Memory already exists for {effective_user_id}. Use reset=True to recreate."
+            self,
+            user_id: Optional[str] = None,
+            blocks: Optional[List[Dict[str, Any]]] = None,
+            reset: bool = False
+        ) -> Dict[str, Any]:
+            """
+            Initialize memory with custom blocks
+            """
+            try:
+                effective_user_id = self._get_user_id(user_id)
+                
+                # Check if agent exists
+                agent = self.memory._get_matching_agent(tags=[effective_user_id])
+                
+                if agent:
+                    if reset:
+                        self.memory._delete_agent(agent.id)
+                        agent = None
+                    else:
+                        return {
+                            "success": False,
+                            "error": f"Memory already exists for {effective_user_id}. Use reset=True to recreate."
+                        }
+                        
+                # if human, summary and persona blocks are not added to the blocks argument by user, add them first check whether they are already added if not add them
+                
+                # Ensure blocks is a list
+                if blocks is None:
+                    blocks = []
+                    
+                # Get labels of blocks already provided by the user
+                existing_labels = {block.get("label") for block in blocks if block.get("label")}
+                
+                # Define the default blocks that should always exist
+                default_block_definitions = [
+                    {
+                        "label": "human",
+                        "description": "Information about the human user.",
+                        "value": "",
+                        "char_limit": 10000
+                    },
+                    {
+                        "label": "persona",
+                        "description": "Information about the AI's persona.",
+                        "value": "",
+                        "char_limit": 10000
+                    },
+                    {
+                        "label": "summary",
+                        "description": "A rolling summary of the conversation.",
+                        "value": "",
+                        "char_limit": 10000
                     }
-            
-            # Format blocks for agent creation
-            memory_blocks = []
-            if blocks:
-                for block in blocks:
-                    memory_blocks.append({
-                        "label": block.get("label"),
-                        "description": block.get("description"),
-                        "value": block.get("value", ""),
-                        "limit": block.get("char_limit", 10000)
-                    })
-            
-            # Create agent with embedding
-            agent_id = self.memory.letta_client.agents.create(
-                name=f"memory_agent_{effective_user_id}",
-                model=self.model,
-                embedding=self.embedding,
-                agent_type="sleeptime_agent",
-                tags=self.memory._subject_tags(effective_user_id),
-                memory_blocks=memory_blocks
-            ).id
-            
-            # Create initial passage
-            self.memory.letta_client.agents.passages.create(
-                agent_id=agent_id,
-                text=f"Initialized memory for user {effective_user_id}",
-                tags=[self.memory._default_tag]
-            )
-            
-            logger.info(f"Created agent with {len(memory_blocks)} blocks")
-            return {
-                "success": True,
-                "message": f"Initialized memory for {effective_user_id}",
-                "agent_id": agent_id,
-                "blocks_created": len(memory_blocks)
-            }
-            
-        except Exception as e:
-            logger.error(f"Error initializing with blocks: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
-    
-    # ... rest of the methods remain the same ...
-    
+                ]
+                
+                # Add any missing default blocks
+                for default_block in default_block_definitions:
+                    if default_block["label"] not in existing_labels:
+                        blocks.append(default_block)
+
+                
+                # Format blocks for agent creation
+                memory_blocks = []
+                if blocks:
+                    for block in blocks:
+                        memory_blocks.append({
+                            "label": block.get("label"),
+                            "description": block.get("description"),
+                            "value": block.get("value", ""),
+                            "limit": block.get("char_limit", 10000)
+                        })
+                
+                # Create agent with embedding
+                agent_id = self.memory.letta_client.agents.create(
+                    name=f"memory_agent_{effective_user_id}",
+                    model=self.model,
+                    embedding=self.embedding,
+                    agent_type="sleeptime_agent",
+                    tags=self.memory._subject_tags(effective_user_id),
+                    memory_blocks=memory_blocks
+                ).id
+                
+                # Create initial passage
+                self.memory.letta_client.agents.passages.create(
+                    agent_id=agent_id,
+                    text=f"Initialized memory for user {effective_user_id}",
+                    tags=[self.memory._default_tag]
+                )
+                
+                logger.info(f"Created agent with {len(memory_blocks)} blocks")
+                return {
+                    "success": True,
+                    "message": f"Initialized memory for {effective_user_id}",
+                    "agent_id": agent_id,
+                    "blocks_created": len(memory_blocks)
+                }
+                
+            except Exception as e:
+                logger.error(f"Error initializing with blocks: {e}")
+                return {
+                    "success": False,
+                    "error": str(e)
+                }
+        
     def add_conversation(
         self, 
         messages: List[Dict[str, str]],
@@ -351,8 +386,12 @@ class MemoryService:
             # Get summary if requested
             summary = ""
             if include_summary:
-                summary_result = self.get_summary(effective_user_id, format="xml")
-                summary = summary_result.get("summary", "")
+                try:
+                    summary_result = self.get_summary(effective_user_id, format="xml")
+                    summary = summary_result.get("summary", "")
+                except Exception as e:
+                    logger.error(f"Error getting summary: {e}")
+                    summary = ""
             
             # Search for relevant memories if query provided
             relevant_memories = []
