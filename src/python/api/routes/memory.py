@@ -13,10 +13,6 @@ from ..models import (
     FullContextResponse,
     DeleteResponse,
     AgentIdResponse,
-    CreateIdentityRequest,
-    CreateIdentityResponse,
-    IdentityInfoResponse,
-    ListAgentsByIdentityResponse,
 )
 from ..memory_service import MemoryService
 import os
@@ -24,56 +20,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 router = APIRouter(prefix="/memory", tags=["memory"])
-
-# Initialize memory service
+# Initialize memory service with model configuration
 memory_service = MemoryService(
     api_key=os.getenv("LETTA_API_KEY"),
-    base_url=os.getenv("LETTA_BASE_URL")
+    base_url=os.getenv("LETTA_BASE_URL"),
+    model=os.getenv("LETTA_MODEL", "openai/gpt-4.1"),
+    embedding=os.getenv("LETTA_EMBEDDING", "openai/text-embedding-3-small")
 )
-
-
-@router.post("/identity", response_model=CreateIdentityResponse)
-async def create_identity(request: CreateIdentityRequest):
-    """
-    Create a new identity
-    
-    Use this to create identities for different entity types:
-    - user: Individual users
-    - org: Organizations or companies
-    - other: Bots, systems, teams, or custom types
-    """
-    result = memory_service.create_identity(
-        identifier_key=request.identifier_key,
-        name=request.name,
-        identity_type=request.identity_type
-    )
-    
-    if not result.get("success"):
-        raise HTTPException(status_code=500, detail=result.get("error", "Unknown error"))
-    
-    return result
-
-
-@router.get("/identity/{identifier_key}", response_model=IdentityInfoResponse)
-async def get_identity_info(identifier_key: str):
-    """Get identity information"""
-    result = memory_service.get_identity_info(identifier_key=identifier_key)
-    
-    if not result.get("success"):
-        raise HTTPException(status_code=404, detail=result.get("error", "Identity not found"))
-    
-    return result
-
-
-@router.get("/identity/{identifier_key}/agents", response_model=ListAgentsByIdentityResponse)
-async def list_agents_by_identity(identifier_key: str):
-    """List all agents associated with an identity"""
-    result = memory_service.list_agents_by_identity(identifier_key=identifier_key)
-    
-    if not result.get("success"):
-        raise HTTPException(status_code=500, detail=result.get("error", "Failed to list agents"))
-    
-    return result
 
 
 @router.post("/initialize", response_model=InitializeUserResponse)
@@ -82,13 +35,10 @@ async def initialize_user(request: InitializeUserRequest):
     Initialize memory for a user with default blocks (human, summary)
     
     For custom blocks, use /initialize-with-blocks
-    For block management, use Letta API directly
     """
     result = memory_service.initialize_user(
         user_id=request.user_id,
         user_info=request.user_info,
-        user_name=request.user_name,
-        identity_type=request.identity_type,
         reset=request.reset
     )
     
@@ -101,7 +51,7 @@ async def initialize_user(request: InitializeUserRequest):
 @router.post("/initialize-with-blocks", response_model=InitializeWithBlocksResponse)
 async def initialize_with_blocks(request: InitializeWithBlocksRequest):
     """
-    Initialize memory with custom blocks and identities
+    Initialize memory with custom blocks
     
     Use this for advanced use cases like:
     - Customer support bots (customer_profile, support_history, policies)
@@ -114,9 +64,6 @@ async def initialize_with_blocks(request: InitializeWithBlocksRequest):
     result = memory_service.initialize_with_blocks(
         user_id=request.user_id,
         blocks=blocks,
-        user_name=request.user_name,
-        identity_type=request.identity_type,
-        additional_identity_ids=request.additional_identity_ids,
         reset=request.reset
     )
     
