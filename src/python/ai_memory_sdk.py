@@ -16,10 +16,36 @@ class Memory:
     def __init__(self,
         api_key: Optional[str] = None,
         subject_id: Optional[str] = None,
+        base_url: Optional[str] = None,
     ):
+        """
+        Initialize the Memory SDK
+        
+        Args:
+            api_key: Letta API key (defaults to LETTA_API_KEY env var). Required for Letta Cloud.
+            subject_id: Optional default subject for instance-scoped operations
+            base_url: Letta server URL (defaults to Letta Cloud). For self-hosted: "http://localhost:<port>" or server URL
+        """
         if api_key is None:
             api_key = os.getenv("LETTA_API_KEY")
-        self.letta_client = Letta(token=api_key)
+        
+        # Initialize Letta client with appropriate parameters
+        if base_url:
+            # Self-hosted Letta server
+            # Token is optional for self-hosted (only needed if password protection is enabled)
+            if api_key:
+                self.letta_client = Letta(base_url=base_url, token=api_key)
+            else:
+                self.letta_client = Letta(base_url=base_url)
+        else:
+            # Letta Cloud (requires API key)
+            if not api_key:
+                raise ValueError(
+                    "api_key is required for Letta Cloud. Either pass api_key parameter "
+                    "or set LETTA_API_KEY environment variable. For self-hosted, pass base_url."
+                )
+            self.letta_client = Letta(token=api_key)
+        
         # Optional default subject for instance-scoped operations
         self.subject_id = subject_id
         self._default_tag = "ai-memory-sdk"
