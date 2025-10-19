@@ -159,7 +159,7 @@ class MemoryService:
                             "error": f"Memory already exists for {effective_user_id}. Use reset=True to recreate."
                         }
                         
-                # if human, summary and persona blocks are not added to the blocks argument by user, add them first check whether they are already added if not add them
+                # if human, summary are not added to the blocks argument by user, add them first check whether they are already added if not add them
                 
                 # Ensure blocks is a list
                 if blocks is None:
@@ -173,12 +173,6 @@ class MemoryService:
                     {
                         "label": "human",
                         "description": "Information about the human user.",
-                        "value": "",
-                        "char_limit": 10000
-                    },
-                    {
-                        "label": "persona",
-                        "description": "Information about the AI's persona.",
                         "value": "",
                         "char_limit": 10000
                     },
