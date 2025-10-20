@@ -85,28 +85,6 @@ memory.wait_for_run(run)
 spec = memory.get_memory("spec", subject_id="project_alpha")
 ```
 
-
-**TypeScript (instance-scoped)**:
-```ts
-import { Memory } from '@letta-ai/memory-sdk'
-
-const memory = new Memory({ subjectId: 'user_sarah' })
-await memory.initializeMemory('preferences', 'Known user preferences.', 'Likes cats')
-// unified API when instance is bound to a context
-await memory.addMessages([{ role: 'user', content: 'I love cats' }])
-const formatted = await memory.getMemory('preferences', true)
-```
-
-
-**TypeScript (explicit subject)**:
-```ts
-const memory = new Memory()
-await memory.initializeSubject('project_alpha', true)
-await memory.initializeMemory('spec', 'Project spec', 'v1', 10000, false, 'project_alpha')
-const run = await memory.addMessagesToSubject('project_alpha', [{ role: 'user', content: 'Kickoff done' }])
-await memory.waitForRun(run)
-```
-
 ## Quickstart
 
 1. Create a [Letta API key](https://app.letta.com/api-keys)
@@ -299,7 +277,7 @@ memory.delete_user("user_id")
 - [x] Save messages as archival memories
 - [x] Query messages
 - [ ] Query messages by time
-- [x] TypeScript support
+- [ ] TypeScript support
 - [ ] Learning from files
 - [ ] Add "sleep" (offline collective revisioning of all data)
 
