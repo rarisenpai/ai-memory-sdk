@@ -25,14 +25,6 @@ You will need the `ai-memory-sdk`, `uv` (as a fast installer/runner), and `fasta
 
 **Standard Installation (as a user):**
 
-```bash
-# Install the SDK from PyPI
-pip install "ai-memory-sdk"
-
-# Install FastAPI and uvicorn
-pip install "fastapi[all]"
-```
-
 **Local Development (from source):**
 This assumes you are developing the `ai-memory-sdk` and the API service from the same repository.
 
