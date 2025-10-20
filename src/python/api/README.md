@@ -1,7 +1,3 @@
-Here is the updated documentation for your Memory Layer API, including the new installation and server run commands.
-
------
-
 # Memory Layer API Reference
 
 The Memory Layer API provides a high-level RESTful interface on top of the `ai-memory-sdk`. It's designed to be used as a persistent, stateful memory store by external systems like **n8n**, agent frameworks, or other applications without them needing to integrate the Python SDK directly.
